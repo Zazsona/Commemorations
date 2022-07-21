@@ -1,0 +1,9 @@
+name: Commemorations
+version: 1.0
+main: com.zazsona.commemorations.CommemorationsPlugin
+api-version: 1.19
+prefix: Commemorations
+softdepend: [ Vault ]
+authors: [ Zazsona ]
+description: Get commemorative signs to celebrate achievements!
+website: https://twitter.com/Zazsona
