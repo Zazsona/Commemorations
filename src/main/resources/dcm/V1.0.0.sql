@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS TemplateSkinRenderDefinition (
     , StartX           INTEGER        NOT NULL
     , StartY           INTEGER        NOT NULL
     , Width            INTEGER        NOT NULL
-    , Length           INTEGER        NOT NULL
+    , Height           INTEGER        NOT NULL
     , FOREIGN KEY(TemplateId) REFERENCES TemplateGraphic(TemplateId)
 );
 

@@ -6,15 +6,15 @@ public class TemplateSkinRenderDefinition
     private int startX;
     private int startY;
     private int width;
-    private int length;
+    private int height;
 
-    public TemplateSkinRenderDefinition(SkinRenderType skinRenderType, int startX, int startY, int width, int length)
+    public TemplateSkinRenderDefinition(SkinRenderType skinRenderType, int startX, int startY, int width, int height)
     {
         this.skinRenderType = skinRenderType;
         this.startX = startX;
         this.startY = startY;
         this.width = width;
-        this.length = length;
+        this.height = height;
     }
 
     public SkinRenderType getSkinRenderType()
@@ -37,8 +37,8 @@ public class TemplateSkinRenderDefinition
         return width;
     }
 
-    public int getLength()
+    public int getHeight()
     {
-        return length;
+        return height;
     }
 }
