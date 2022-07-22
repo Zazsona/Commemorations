@@ -20,13 +20,13 @@ CREATE TABLE IF NOT EXISTS TemplateGraphic (
     , PRIMARY KEY(TemplateId)
 );
 
-CREATE TABLE IF NOT EXISTS TemplateGraphicPlayerSkinMapping (
-      TemplateId      VARCHAR(255)   NOT NULL
-    , SkinType        TEXT CHECK( SkinType IN ('Head', 'Torso', 'Body') )  NOT NULL
-    , StartX          INTEGER        NOT NULL
-    , StartY          INTEGER        NOT NULL
-    , Width           INTEGER        NOT NULL
-    , Length          INTEGER        NOT NULL
+CREATE TABLE IF NOT EXISTS TemplateSkinRenderDefinition (
+      TemplateId       VARCHAR(255)   NOT NULL
+    , SkinRenderType   TEXT CHECK( SkinRenderType IN ('HEAD', 'TORSO', 'BODY') )  NOT NULL
+    , StartX           INTEGER        NOT NULL
+    , StartY           INTEGER        NOT NULL
+    , Width            INTEGER        NOT NULL
+    , Length           INTEGER        NOT NULL
     , FOREIGN KEY(TemplateId) REFERENCES TemplateGraphic(TemplateId)
 );
 
