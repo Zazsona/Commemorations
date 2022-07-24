@@ -1,6 +1,7 @@
 package com.zazsona.commemorations;
 
 import com.zazsona.commemorations.image.GraphicRenderer;
+import com.zazsona.commemorations.image.PlayerProfileFetcher;
 import com.zazsona.commemorations.image.SkinRenderer;
 import com.zazsona.commemorations.repository.CommemorationsPlayerRepository;
 import com.zazsona.commemorations.repository.GraphicRepository;
@@ -26,6 +27,7 @@ public class CommemorationsPlugin extends JavaPlugin
     private GraphicRepository graphicRepository;
     private CommemorationsPlayerRepository playerRepository;
 
+    private PlayerProfileFetcher profileFetcher;
     private SkinRenderer skinRenderer;
     private GraphicRenderer graphicRenderer;
 
@@ -60,11 +62,12 @@ public class CommemorationsPlugin extends JavaPlugin
             ArrayList<String> dcmScripts = getRequiredDcmScripts(dbVer);
             executeDatabaseChangeManagement(dcmScripts);
 
+            profileFetcher = new PlayerProfileFetcher();
             skinRenderer = new SkinRenderer();
             graphicRenderer = new GraphicRenderer(skinRenderer);
 
             graphicRepository = new GraphicRepository(conn, graphicRenderer);
-            playerRepository = new CommemorationsPlayerRepository(conn, skinRenderer);
+            playerRepository = new CommemorationsPlayerRepository(conn, profileFetcher);
         }
         catch (SQLException | IOException e)
         {
@@ -176,7 +179,7 @@ public class CommemorationsPlugin extends JavaPlugin
     public void onEnable()
     {
         super.onEnable();
-        CommemorationsPlayerDataUpdater playerDataUpdater = new CommemorationsPlayerDataUpdater(skinRenderer);
+        CommemorationsPlayerDataUpdater playerDataUpdater = new CommemorationsPlayerDataUpdater(profileFetcher);
         getServer().getPluginManager().registerEvents(playerDataUpdater, this);
     }
 

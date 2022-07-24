@@ -1,8 +1,7 @@
 package com.zazsona.commemorations;
 
 import com.zazsona.commemorations.database.CommemorationsPlayer;
-import com.zazsona.commemorations.image.SkinRenderType;
-import com.zazsona.commemorations.image.SkinRenderer;
+import com.zazsona.commemorations.image.PlayerProfileFetcher;
 import com.zazsona.commemorations.repository.CommemorationsPlayerRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -21,11 +20,11 @@ import java.util.UUID;
 
 public class CommemorationsPlayerDataUpdater implements Listener
 {
-    private SkinRenderer skinRenderer;
+    private PlayerProfileFetcher profileFetcher;
 
-    public CommemorationsPlayerDataUpdater(SkinRenderer skinRenderer)
+    public CommemorationsPlayerDataUpdater(PlayerProfileFetcher profileFetcher)
     {
-        this.skinRenderer = skinRenderer;
+        this.profileFetcher = profileFetcher;
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
@@ -43,24 +42,24 @@ public class CommemorationsPlayerDataUpdater implements Listener
                     CommemorationsPlayerRepository playerRepository = CommemorationsPlugin.getInstance().getPlayerRepository();
                     if (!playerRepository.isPlayerRegistered(playerId))
                     {
-                        playerRepository.registerPlayer(e.getPlayer());
+                        playerRepository.registerPlayer(playerId);
                         return;
                     }
 
                     CommemorationsPlayer commPlayer = playerRepository.getPlayer(playerId);
                     if (!commPlayer.getUsername().equals(e.getPlayer().getName()))
                     {
-                        playerRepository.registerPlayer(e.getPlayer());
+                        playerRepository.registerPlayer(playerId);
                         return;
                     }
 
-                    BufferedImage currentSkin = skinRenderer.renderSkin(playerId, SkinRenderType.TEXTURE);
+                    BufferedImage currentSkin = profileFetcher.fetchPlayerSkin(playerId);
                     ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
                     ImageIO.write(currentSkin, "png", byteStream);
                     String currentSkinBase64 = Base64.getEncoder().encodeToString(byteStream.toByteArray());
                     if (!currentSkinBase64.equals(commPlayer.getSkinBase64()))
                     {
-                        playerRepository.registerPlayer(e.getPlayer());
+                        playerRepository.registerPlayer(playerId);
                         return;
                     }
                 }

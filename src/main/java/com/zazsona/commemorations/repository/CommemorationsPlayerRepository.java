@@ -1,9 +1,8 @@
 package com.zazsona.commemorations.repository;
 
+import com.zazsona.commemorations.apiresponse.ProfileResponse;
 import com.zazsona.commemorations.database.CommemorationsPlayer;
-import com.zazsona.commemorations.image.SkinRenderType;
-import com.zazsona.commemorations.image.SkinRenderer;
-import org.bukkit.OfflinePlayer;
+import com.zazsona.commemorations.image.PlayerProfileFetcher;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -17,12 +16,12 @@ import java.util.UUID;
 public class CommemorationsPlayerRepository
 {
     private Connection conn;
-    private SkinRenderer skinRenderer;
+    private PlayerProfileFetcher profileFetcher;
 
-    public CommemorationsPlayerRepository(Connection dbConn, SkinRenderer skinRenderer)
+    public CommemorationsPlayerRepository(Connection dbConn, PlayerProfileFetcher profileFetcher)
     {
         this.conn = dbConn;
-        this.skinRenderer = skinRenderer;
+        this.profileFetcher = profileFetcher;
     }
 
     public CommemorationsPlayer getPlayer(UUID playerId) throws SQLException
@@ -43,12 +42,12 @@ public class CommemorationsPlayerRepository
         return player;
     }
 
-    public CommemorationsPlayer registerPlayer(OfflinePlayer player) throws SQLException, IOException
+    public CommemorationsPlayer registerPlayer(UUID playerId) throws SQLException, IOException
     {
-        UUID playerId = player.getUniqueId();
-        String playerName = player.getName();
+        ProfileResponse playerProfile = profileFetcher.fetchPlayerProfile(playerId);
+        String playerName = playerProfile.getName();
         long lastUpdated = Instant.now().getEpochSecond();
-        BufferedImage skin = skinRenderer.renderSkin(playerId, SkinRenderType.TEXTURE);
+        BufferedImage skin = profileFetcher.fetchPlayerSkin(playerId);
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         ImageIO.write(skin, "png", byteStream);
         String skinBase64 = Base64.getEncoder().encodeToString(byteStream.toByteArray());
@@ -61,6 +60,7 @@ public class CommemorationsPlayerRepository
                   "  , SkinBase64 = ? \n" +
                   "  , LastUpdated = ? \n" +
                   "WHERE PlayerId = ?;";
+
             // TODO: Update any linked renders
         }
         else
