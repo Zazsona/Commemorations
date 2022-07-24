@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS Player (
 CREATE TABLE IF NOT EXISTS BrgPlayerToRenderedGraphic (
       PlayerId           VARCHAR(36)    NOT NULL
     , RenderId           VARCHAR(36)    NOT NULL
+    , OrderIndex         INTEGER        NOT NULL
     , FOREIGN KEY(PlayerId) REFERENCES Player(PlayerId)
     , FOREIGN KEY(RenderId) REFERENCES RenderedGraphic(RenderId)
 );
