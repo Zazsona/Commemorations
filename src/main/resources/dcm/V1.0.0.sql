@@ -39,6 +39,21 @@ CREATE TABLE IF NOT EXISTS RenderedGraphic (
     , FOREIGN KEY(TemplateId) REFERENCES TemplateGraphic(TemplateId)
 );
 
+CREATE TABLE IF NOT EXISTS Player (
+      PlayerId           VARCHAR(36)    NOT NULL
+    , Username           VARCHAR(16)    NOT NULL
+    , SkinBase64         VARCHAR(2048)  NOT NULL
+    , LastUpdated        INTEGER        NOT NULL    DEFAULT CURRENT_TIMESTAMP
+    , PRIMARY KEY(PlayerId)
+);
+
+CREATE TABLE IF NOT EXISTS BrgPlayerToRenderedGraphic (
+      PlayerId           VARCHAR(36)    NOT NULL
+    , RenderId           VARCHAR(36)    NOT NULL
+    , FOREIGN KEY(PlayerId) REFERENCES Player(PlayerId)
+    , FOREIGN KEY(RenderId) REFERENCES RenderedGraphic(RenderId)
+);
+
 -- ============================
 -- Update Meta Table
 -- ============================

@@ -9,6 +9,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -60,6 +61,18 @@ public class SkinRenderer
     {
         ProfileResponse playerProfile = fetchPlayerProfile(playerId);
         BufferedImage playerSkin = getPlayerSkin(playerProfile);
+        return renderOutputFormat(renderType, playerSkin);
+    }
+
+    public BufferedImage renderSkin(String skinBase64, SkinRenderType renderType) throws IOException
+    {
+        byte[] decodedBytes = Base64.getDecoder().decode(skinBase64);
+        BufferedImage playerSkin = ImageIO.read(new ByteArrayInputStream(decodedBytes));
+        return renderOutputFormat(renderType, playerSkin);
+    }
+
+    private BufferedImage renderOutputFormat(SkinRenderType renderType, BufferedImage playerSkin)
+    {
         switch (renderType)
         {
             case TEXTURE:

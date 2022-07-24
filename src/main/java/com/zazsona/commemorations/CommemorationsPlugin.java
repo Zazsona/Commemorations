@@ -1,5 +1,8 @@
 package com.zazsona.commemorations;
 
+import com.zazsona.commemorations.image.GraphicRenderer;
+import com.zazsona.commemorations.image.SkinRenderer;
+import com.zazsona.commemorations.repository.CommemorationsPlayerRepository;
 import com.zazsona.commemorations.repository.GraphicRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -21,6 +24,10 @@ public class CommemorationsPlugin extends JavaPlugin
     private Connection conn;
 
     private GraphicRepository graphicRepository;
+    private CommemorationsPlayerRepository playerRepository;
+
+    private SkinRenderer skinRenderer;
+    private GraphicRenderer graphicRenderer;
 
     public static CommemorationsPlugin getInstance()
     {
@@ -33,6 +40,11 @@ public class CommemorationsPlugin extends JavaPlugin
     public GraphicRepository getGraphicRepository()
     {
         return graphicRepository;
+    }
+
+    public CommemorationsPlayerRepository getPlayerRepository()
+    {
+        return playerRepository;
     }
 
 
@@ -48,7 +60,11 @@ public class CommemorationsPlugin extends JavaPlugin
             ArrayList<String> dcmScripts = getRequiredDcmScripts(dbVer);
             executeDatabaseChangeManagement(dcmScripts);
 
-            graphicRepository = new GraphicRepository(conn);
+            skinRenderer = new SkinRenderer();
+            graphicRenderer = new GraphicRenderer(skinRenderer);
+
+            graphicRepository = new GraphicRepository(conn, graphicRenderer);
+            playerRepository = new CommemorationsPlayerRepository(conn, skinRenderer);
         }
         catch (SQLException | IOException e)
         {
@@ -81,13 +97,13 @@ public class CommemorationsPlugin extends JavaPlugin
 
         Statement versionStatement = conn.createStatement();
         versionStatement.execute("SELECT * FROM PluginMeta ORDER BY MajorVersion DESC, MinorVersion DESC, PatchVersion DESC LIMIT 1;");
-        ResultSet verResults = metaCheckStatement.getResultSet();
+        ResultSet verResults = versionStatement.getResultSet();
         if (!verResults.next())
             return new SemanticVersion(0, 0, 0);
 
-        int major = verResults.getInt(0);
-        int minor = verResults.getInt(1);
-        int patch = verResults.getInt(2);
+        int major = verResults.getInt(1);
+        int minor = verResults.getInt(2);
+        int patch = verResults.getInt(3);
         return new SemanticVersion(major, minor, patch);
     }
 
@@ -160,6 +176,8 @@ public class CommemorationsPlugin extends JavaPlugin
     public void onEnable()
     {
         super.onEnable();
+        CommemorationsPlayerDataUpdater playerDataUpdater = new CommemorationsPlayerDataUpdater(skinRenderer);
+        getServer().getPluginManager().registerEvents(playerDataUpdater, this);
     }
 
     @Override

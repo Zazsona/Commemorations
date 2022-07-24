@@ -12,9 +12,9 @@ public class GraphicRenderer
 {
     private SkinRenderer skinRenderer;
 
-    public GraphicRenderer()
+    public GraphicRenderer(SkinRenderer skinRenderer)
     {
-        this.skinRenderer = new SkinRenderer();
+        this.skinRenderer = skinRenderer;
     }
 
     public BufferedImage renderGraphic(BufferedImage template, ArrayList<TemplateSkinRenderDefinition> skinDefinitions, ArrayList<UUID> playerIds) throws IOException
