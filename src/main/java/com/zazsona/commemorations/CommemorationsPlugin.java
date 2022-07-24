@@ -1,6 +1,6 @@
 package com.zazsona.commemorations;
 
-import com.zazsona.commemorations.database.GraphicRepository;
+import com.zazsona.commemorations.repository.GraphicRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 

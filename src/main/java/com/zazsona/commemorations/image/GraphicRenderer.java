@@ -1,9 +1,10 @@
 package com.zazsona.commemorations.image;
 
+import com.zazsona.commemorations.database.TemplateSkinRenderDefinition;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -19,7 +20,7 @@ public class GraphicRenderer
     public BufferedImage renderGraphic(BufferedImage template, ArrayList<TemplateSkinRenderDefinition> skinDefinitions, ArrayList<UUID> playerIds) throws IOException
     {
         if (skinDefinitions.size() != playerIds.size())
-            throw new InvalidParameterException("skinDefinitions and playerIds must be of the same size.");
+            throw new IllegalArgumentException("skinDefinitions and playerIds must be of the same size.");
 
         BufferedImage render = new BufferedImage(template.getWidth(), template.getHeight(), BufferedImage.TYPE_INT_RGB);
         Graphics2D renderGraphics = render.createGraphics();

@@ -1,20 +1,31 @@
-package com.zazsona.commemorations.image;
+package com.zazsona.commemorations.database;
+
+import com.zazsona.commemorations.image.SkinRenderType;
+
+import java.util.UUID;
 
 public class TemplateSkinRenderDefinition
 {
+    private UUID templateId;
     private SkinRenderType skinRenderType;
     private int startX;
     private int startY;
     private int width;
     private int height;
 
-    public TemplateSkinRenderDefinition(SkinRenderType skinRenderType, int startX, int startY, int width, int height)
+    public TemplateSkinRenderDefinition(UUID templateId, SkinRenderType skinRenderType, int startX, int startY, int width, int height)
     {
+        this.templateId = templateId;
         this.skinRenderType = skinRenderType;
         this.startX = startX;
         this.startY = startY;
         this.width = width;
         this.height = height;
+    }
+
+    public UUID getTemplateId()
+    {
+        return templateId;
     }
 
     public SkinRenderType getSkinRenderType()
