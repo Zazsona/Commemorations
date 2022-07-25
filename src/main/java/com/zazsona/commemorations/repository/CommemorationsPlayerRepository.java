@@ -1,5 +1,6 @@
 package com.zazsona.commemorations.repository;
 
+import com.zazsona.commemorations.CommemorationsPlugin;
 import com.zazsona.commemorations.apiresponse.ProfileResponse;
 import com.zazsona.commemorations.database.CommemorationsPlayer;
 import com.zazsona.commemorations.image.PlayerProfileFetcher;
@@ -10,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.sql.*;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.UUID;
 
@@ -52,32 +54,50 @@ public class CommemorationsPlayerRepository
         ImageIO.write(skin, "png", byteStream);
         String skinBase64 = Base64.getEncoder().encodeToString(byteStream.toByteArray());
 
-        String sql = "";
-        if (isPlayerRegistered(playerId))
+        boolean isNewPlayer = isPlayerRegistered(playerId);
+        String playerSql = "";
+        if (!isNewPlayer)
         {
-            sql = "UPDATE Player\n" +
-                  "SET Username = ? \n" +
-                  "  , SkinBase64 = ? \n" +
-                  "  , LastUpdated = ? \n" +
-                  "WHERE PlayerId = ?;";
-
-            // TODO: Update any linked renders
+            playerSql = "UPDATE Player\n" +
+                        "SET Username = ? \n" +
+                        "  , SkinBase64 = ? \n" +
+                        "  , LastUpdated = ? \n" +
+                        "WHERE PlayerId = ?;";
         }
         else
         {
-            sql = "INSERT INTO Player (Username, SkinBase64, LastUpdated, PlayerId)" +
-                  "VALUES (?, ?, ?, ?);";
+            playerSql = "INSERT INTO Player (Username, SkinBase64, LastUpdated, PlayerId)" +
+                        "VALUES (?, ?, ?, ?);";
         }
 
-        PreparedStatement playerStatement = conn.prepareStatement(sql);
+        PreparedStatement playerStatement = conn.prepareStatement(playerSql);
         playerStatement.setString(1, playerName);
         playerStatement.setString(2, skinBase64);
         playerStatement.setLong(3, lastUpdated);
         playerStatement.setString(4, playerId.toString());
         playerStatement.executeUpdate();
 
+        if (!isNewPlayer)
+            updatePlayerRenders(playerId);
+
         CommemorationsPlayer commemorationsPlayer = new CommemorationsPlayer(playerId, playerName, skinBase64, lastUpdated);
         return commemorationsPlayer;
+    }
+
+    private void updatePlayerRenders(UUID playerId) throws SQLException, IOException
+    {
+        GraphicRepository graphicRepository = CommemorationsPlugin.getInstance().getGraphicRepository();
+        String renderIdSql = "SELECT RenderId FROM BrgPlayerToRenderedGraphic WHERE PlayerId = ?;";
+        PreparedStatement renderStatement = conn.prepareStatement(renderIdSql);
+        renderStatement.setString(1, playerId.toString());
+        renderStatement.execute();
+        ResultSet renderIdResults = renderStatement.getResultSet();
+        ArrayList<UUID> renderIds = new ArrayList<>();
+        while (renderIdResults.next())
+            renderIds.add(UUID.fromString(renderIdResults.getString("RenderId")));
+
+        for (UUID renderId : renderIds)
+            graphicRepository.updateRender(renderId);
     }
 
     public boolean isPlayerRegistered(UUID playerId) throws SQLException
