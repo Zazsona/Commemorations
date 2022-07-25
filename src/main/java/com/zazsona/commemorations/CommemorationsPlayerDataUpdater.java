@@ -38,28 +38,28 @@ public class CommemorationsPlayerDataUpdater implements Listener
             {
                 try
                 {
-                    UUID playerId = e.getPlayer().getUniqueId();
+                    UUID playerGuid = e.getPlayer().getUniqueId();
                     CommemorationsPlayerRepository playerRepository = CommemorationsPlugin.getInstance().getPlayerRepository();
-                    if (!playerRepository.isPlayerRegistered(playerId))
+                    if (!playerRepository.isPlayerRegistered(playerGuid))
                     {
-                        playerRepository.registerPlayer(playerId);
+                        playerRepository.registerPlayer(playerGuid);
                         return;
                     }
 
-                    CommemorationsPlayer commPlayer = playerRepository.getPlayer(playerId);
+                    CommemorationsPlayer commPlayer = playerRepository.getPlayer(playerGuid);
                     if (!commPlayer.getUsername().equals(e.getPlayer().getName()))
                     {
-                        playerRepository.registerPlayer(playerId);
+                        playerRepository.registerPlayer(playerGuid);
                         return;
                     }
 
-                    BufferedImage currentSkin = profileFetcher.fetchPlayerSkin(playerId);
+                    BufferedImage currentSkin = profileFetcher.fetchPlayerSkin(playerGuid);
                     ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
                     ImageIO.write(currentSkin, "png", byteStream);
                     String currentSkinBase64 = Base64.getEncoder().encodeToString(byteStream.toByteArray());
                     if (!currentSkinBase64.equals(commPlayer.getSkinBase64()))
                     {
-                        playerRepository.registerPlayer(playerId);
+                        playerRepository.registerPlayer(playerGuid);
                         return;
                     }
                 }

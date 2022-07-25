@@ -13,22 +13,22 @@ import java.util.UUID;
 
 public class CommemorationsPlayer
 {
-    private UUID playerId;
+    private UUID playerGuid;
     private String username;
     private String skinBase64;
     private long lastUpdated;
 
-    public CommemorationsPlayer(UUID playerId, String username, String skinBase64, long lastUpdated)
+    public CommemorationsPlayer(UUID playerGuid, String username, String skinBase64, long lastUpdated)
     {
-        this.playerId = playerId;
+        this.playerGuid = playerGuid;
         this.username = username;
         this.skinBase64 = skinBase64;
         this.lastUpdated = lastUpdated;
     }
 
-    public UUID getPlayerId()
+    public UUID getPlayerGuid()
     {
-        return playerId;
+        return playerGuid;
     }
 
     public String getUsername()
@@ -60,11 +60,11 @@ public class CommemorationsPlayer
 
     public Player getPlayer()
     {
-        return Bukkit.getPlayer(playerId);
+        return Bukkit.getPlayer(playerGuid);
     }
 
     public OfflinePlayer getOfflinePlayer()
     {
-        return Bukkit.getOfflinePlayer(playerId);
+        return Bukkit.getOfflinePlayer(playerGuid);
     }
 }

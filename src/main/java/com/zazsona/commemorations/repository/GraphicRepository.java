@@ -27,34 +27,34 @@ public class GraphicRepository
         this.graphicRenderer = graphicRenderer;
     }
 
-    public RenderedGraphic createRender(UUID templateId, ArrayList<UUID> featuredPlayers) throws SQLException, IOException
+    public RenderedGraphic createRender(String templateId, ArrayList<UUID> featuredPlayers) throws SQLException, IOException
     {
         BufferedImage render = createNewRender(templateId, featuredPlayers);
         RenderedGraphic renderedGraphic = insertRender(templateId, render);
         return renderedGraphic;
     }
 
-    public RenderedGraphic updateRender(UUID renderId) throws SQLException, IOException
+    public RenderedGraphic updateRender(UUID renderGuid) throws SQLException, IOException
     {
-        if (!doesRenderExist(renderId))
-            throw new IllegalArgumentException("RenderId does not exist.");
+        if (!doesRenderExist(renderGuid))
+            throw new IllegalArgumentException("RenderGuid does not exist.");
 
-        RenderedGraphic oldRender = getRender(renderId);
-        UUID templateId = oldRender.getTemplateId();
-        ArrayList<UUID> featuredPlayers = getExistingRenderPlayerIds(renderId);
+        RenderedGraphic oldRender = getRender(renderGuid);
+        String templateId = oldRender.getTemplateId();
+        ArrayList<UUID> featuredPlayers = getExistingRenderPlayerGuids(renderGuid);
         BufferedImage renderedGraphic = createNewRender(templateId, featuredPlayers);
-        RenderedGraphic newRender = updateRender(renderId, templateId, renderedGraphic);
+        RenderedGraphic newRender = updateRender(renderGuid, templateId, renderedGraphic);
         return newRender;
     }
 
-    public RenderedGraphic getRender(UUID renderId) throws SQLException, IOException
+    public RenderedGraphic getRender(UUID renderGuid) throws SQLException, IOException
     {
-        return getExistingRender(renderId);
+        return getExistingRender(renderGuid);
     }
 
     public boolean doesRenderExist(UUID id) throws SQLException
     {
-        String sql = "SELECT RenderId FROM RenderedGraphic WHERE RenderId = ?;";
+        String sql = "SELECT RenderGuid FROM RenderedGraphic WHERE RenderGuid = ?;";
         PreparedStatement selectStatement = conn.prepareStatement(sql);
         selectStatement.setString(1, id.toString());
         selectStatement.execute();
@@ -62,47 +62,47 @@ public class GraphicRepository
         return selectResults.next();
     }
 
-    private RenderedGraphic getExistingRender(UUID renderId) throws SQLException
+    private RenderedGraphic getExistingRender(UUID renderGuid) throws SQLException
     {
-        String sql = "SELECT RenderId, TemplateId, ImageBase64, LastUpdated FROM RenderedGraphic WHERE RenderId = ?;";
+        String sql = "SELECT RenderGuid, TemplateId, ImageBase64, LastUpdated FROM RenderedGraphic WHERE RenderGuid = ?;";
         PreparedStatement selectStatement = conn.prepareStatement(sql);
-        selectStatement.setString(1, renderId.toString());
+        selectStatement.setString(1, renderGuid.toString());
         selectStatement.execute();
         ResultSet selectResults = selectStatement.getResultSet();
         if (!selectResults.next())
-            throw new IllegalArgumentException("RenderId does not exist.");
+            throw new IllegalArgumentException("RenderGuid does not exist.");
 
-        UUID templateId = UUID.fromString(selectResults.getString("TemplateId"));
+        String templateId = selectResults.getString("TemplateId");
         String imageBase64 = selectResults.getString("ImageBase64");
         long lastUpdated = selectResults.getLong("LastUpdated");
 
-        RenderedGraphic renderedGraphic = new RenderedGraphic(renderId, templateId, imageBase64, lastUpdated);
+        RenderedGraphic renderedGraphic = new RenderedGraphic(renderGuid, templateId, imageBase64, lastUpdated);
         return renderedGraphic;
     }
 
-    private ArrayList<UUID> getExistingRenderPlayerIds(UUID renderId) throws SQLException
+    private ArrayList<UUID> getExistingRenderPlayerGuids(UUID renderGuid) throws SQLException
     {
-        String sql = "SELECT PlayerId FROM BrgPlayerToRenderedGraphic WHERE RenderId = ? ORDER BY OrderIndex;";
+        String sql = "SELECT PlayerGuid FROM BrgPlayerToRenderedGraphic WHERE RenderGuid = ? ORDER BY OrderIndex;";
         PreparedStatement selectStatement = conn.prepareStatement(sql);
-        selectStatement.setString(1, renderId.toString());
+        selectStatement.setString(1, renderGuid.toString());
         selectStatement.execute();
         ResultSet selectResults = selectStatement.getResultSet();
 
-        ArrayList<UUID> playerIds = new ArrayList<>();
+        ArrayList<UUID> playerGuids = new ArrayList<>();
         while (selectResults.next())
         {
-            String columnValue = selectResults.getString("PlayerId");
-            UUID playerId = UUID.fromString(columnValue);
-            playerIds.add(playerId);
+            String columnValue = selectResults.getString("PlayerGuid");
+            UUID playerGuid = UUID.fromString(columnValue);
+            playerGuids.add(playerGuid);
         }
-        return playerIds;
+        return playerGuids;
     }
 
-    private BufferedImage getTemplate(UUID templateId) throws SQLException, IOException
+    private BufferedImage getTemplate(String templateId) throws SQLException, IOException
     {
         String sql = "SELECT ImageBase64 FROM TemplateGraphic WHERE TemplateId = ?;";
         PreparedStatement selectStatement = conn.prepareStatement(sql);
-        selectStatement.setString(1, templateId.toString());
+        selectStatement.setString(1, templateId);
         selectStatement.execute();
         ResultSet selectResults = selectStatement.getResultSet();
         if (!selectResults.next())
@@ -114,11 +114,11 @@ public class GraphicRepository
         return templateImage;
     }
 
-    private ArrayList<TemplateSkinRenderDefinition> getSkinRenderDefinitions(UUID templateId) throws SQLException, IOException
+    private ArrayList<TemplateSkinRenderDefinition> getSkinRenderDefinitions(String templateId) throws SQLException
     {
         String sql = "SELECT SkinRenderType, StartX, StartY, Width, Height FROM TemplateSkinRenderDefinition WHERE TemplateId = ?;";
         PreparedStatement selectStatement = conn.prepareStatement(sql);
-        selectStatement.setString(1, templateId.toString());
+        selectStatement.setString(1, templateId);
         selectStatement.execute();
         ResultSet selectResults = selectStatement.getResultSet();
 
@@ -136,7 +136,7 @@ public class GraphicRepository
         return definitions;
     }
 
-    private BufferedImage createNewRender(UUID templateId, ArrayList<UUID> featuredPlayers) throws SQLException, IOException
+    private BufferedImage createNewRender(String templateId, ArrayList<UUID> featuredPlayers) throws SQLException, IOException
     {
         BufferedImage template = getTemplate(templateId);
         ArrayList<TemplateSkinRenderDefinition> skinDefinitions = getSkinRenderDefinitions(templateId);
@@ -147,29 +147,29 @@ public class GraphicRepository
         return render;
     }
 
-    private RenderedGraphic insertRender(UUID templateId, BufferedImage render) throws SQLException, IOException
+    private RenderedGraphic insertRender(String templateId, BufferedImage render) throws SQLException, IOException
     {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         ImageIO.write(render, "png", byteStream);
         String imageBase64 = Base64.getEncoder().encodeToString(byteStream.toByteArray());
 
-        String sql = "INSERT INTO RenderedGraphic (RenderId, TemplateId, ImageBase64, LastUpdated)\n" +
+        String sql = "INSERT INTO RenderedGraphic (RenderGuid, TemplateId, ImageBase64, LastUpdated)\n" +
                      "VALUES (?, ?, ?, ?)";
 
-        UUID renderId = UUID.randomUUID();
+        UUID renderGuid = UUID.randomUUID();
         long lastUpdated = Instant.now().getEpochSecond();
         PreparedStatement renderInsert = conn.prepareStatement(sql);
-        renderInsert.setString(1, renderId.toString());
-        renderInsert.setString(2, templateId.toString());
+        renderInsert.setString(1, renderGuid.toString());
+        renderInsert.setString(2, templateId);
         renderInsert.setString(3, imageBase64);
         renderInsert.setLong(4, lastUpdated);
         renderInsert.executeUpdate();
 
-        RenderedGraphic renderedGraphic = new RenderedGraphic(renderId, templateId, imageBase64, lastUpdated);
+        RenderedGraphic renderedGraphic = new RenderedGraphic(renderGuid, templateId, imageBase64, lastUpdated);
         return renderedGraphic;
     }
 
-    private RenderedGraphic updateRender(UUID renderId, UUID templateId, BufferedImage render) throws SQLException, IOException
+    private RenderedGraphic updateRender(UUID renderGuid, String templateId, BufferedImage render) throws SQLException, IOException
     {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         ImageIO.write(render, "png", byteStream);
@@ -179,17 +179,17 @@ public class GraphicRepository
                      "SET TemplateId = ?\n" +
                      "  , ImageBase64 = ?\n" +
                      "  , LastUpdated = ?\n" +
-                     "WHERE RenderId = ?;";
+                     "WHERE RenderGuid = ?;";
 
         long lastUpdated = Instant.now().getEpochSecond();
         PreparedStatement renderUpdate = conn.prepareStatement(sql);
-        renderUpdate.setString(1, templateId.toString());
+        renderUpdate.setString(1, templateId);
         renderUpdate.setString(2, imageBase64);
         renderUpdate.setLong(3, lastUpdated);
-        renderUpdate.setString(4, renderId.toString());
+        renderUpdate.setString(4, renderGuid.toString());
         renderUpdate.executeUpdate();
 
-        RenderedGraphic renderedGraphic = new RenderedGraphic(renderId, templateId, imageBase64, lastUpdated);
+        RenderedGraphic renderedGraphic = new RenderedGraphic(renderGuid, templateId, imageBase64, lastUpdated);
         return renderedGraphic;
     }
 }

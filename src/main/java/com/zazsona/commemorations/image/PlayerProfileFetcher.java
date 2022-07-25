@@ -54,9 +54,9 @@ public class PlayerProfileFetcher
         cacheCleanUpTaskTimer.schedule(cacheCleanupTask, (1000 * 60 * 30)); // 30 mins
     }
 
-    public BufferedImage fetchPlayerSkin(UUID playerId) throws IOException
+    public BufferedImage fetchPlayerSkin(UUID playerGuid) throws IOException
     {
-        ProfileResponse pr = fetchPlayerProfile(playerId);
+        ProfileResponse pr = fetchPlayerProfile(playerGuid);
         BufferedImage skin = getPlayerSkin(pr);
         return skin;
     }
@@ -72,20 +72,20 @@ public class PlayerProfileFetcher
         return skin;
     }
 
-    public ProfileResponse fetchPlayerProfile(UUID playerId) throws IOException
+    public ProfileResponse fetchPlayerProfile(UUID playerGuid) throws IOException
     {
-        if (profileCache.containsKey(playerId))
-            return profileCache.get(playerId);
+        if (profileCache.containsKey(playerGuid))
+            return profileCache.get(playerGuid);
 
-        String response = getApiResponse("https://sessionserver.mojang.com/session/minecraft/profile/"+playerId.toString());
+        String response = getApiResponse("https://sessionserver.mojang.com/session/minecraft/profile/"+playerGuid.toString());
         Gson gson = new Gson();
         ProfileResponse pr = gson.fromJson(response, ProfileResponse.class);
         if (pr.isSuccess())
         {
             synchronized (cacheLock)
             {
-                profileCache.put(playerId, pr);
-                profileCacheTimestamps.put(playerId, Instant.now().getEpochSecond());
+                profileCache.put(playerGuid, pr);
+                profileCacheTimestamps.put(playerGuid, Instant.now().getEpochSecond());
             }
             return pr;
         }

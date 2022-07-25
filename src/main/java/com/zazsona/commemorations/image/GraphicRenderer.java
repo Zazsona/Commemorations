@@ -20,10 +20,10 @@ public class GraphicRenderer
         this.skinRenderer = skinRenderer;
     }
 
-    public BufferedImage renderGraphic(BufferedImage template, ArrayList<TemplateSkinRenderDefinition> skinDefinitions, ArrayList<UUID> playerIds) throws SQLException, IOException
+    public BufferedImage renderGraphic(BufferedImage template, ArrayList<TemplateSkinRenderDefinition> skinDefinitions, ArrayList<UUID> playerGuids) throws SQLException, IOException
     {
-        if (skinDefinitions.size() != playerIds.size())
-            throw new IllegalArgumentException("skinDefinitions and playerIds must be of the same size.");
+        if (skinDefinitions.size() != playerGuids.size())
+            throw new IllegalArgumentException("skinDefinitions and playerGuids must be of the same size.");
 
         BufferedImage render = new BufferedImage(template.getWidth(), template.getHeight(), BufferedImage.TYPE_INT_RGB);
         Graphics2D renderGraphics = render.createGraphics();
@@ -33,9 +33,9 @@ public class GraphicRenderer
         for (int i = 0; i < skinDefinitions.size(); i++)
         {
             TemplateSkinRenderDefinition skinDefinition = skinDefinitions.get(i);
-            UUID playerId = playerIds.get(i);
+            UUID playerGuid = playerGuids.get(i);
 
-            String skinBase64 = playerRepository.getPlayer(playerId).getSkinBase64();
+            String skinBase64 = playerRepository.getPlayer(playerGuid).getSkinBase64();
             BufferedImage skinRender = skinRenderer.renderSkin(skinBase64, skinDefinition.getSkinRenderType());
             renderGraphics.drawImage(skinRender, skinDefinition.getStartX(), skinDefinition.getStartY(), skinDefinition.getWidth(), skinDefinition.getHeight(), null);
         }

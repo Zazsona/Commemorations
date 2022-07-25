@@ -31,28 +31,28 @@ CREATE TABLE IF NOT EXISTS TemplateSkinRenderDefinition (
 );
 
 CREATE TABLE IF NOT EXISTS RenderedGraphic (
-      RenderId           VARCHAR(36)    NOT NULL
+      RenderGuid         VARCHAR(36)    NOT NULL
     , TemplateId         VARCHAR(255)   NOT NULL
     , ImageBase64        VARCHAR(2048)  NOT NULL
     , LastUpdated        INTEGER        NOT NULL    DEFAULT CURRENT_TIMESTAMP
-    , PRIMARY KEY(RenderId)
+    , PRIMARY KEY(RenderGuid)
     , FOREIGN KEY(TemplateId) REFERENCES TemplateGraphic(TemplateId)
 );
 
 CREATE TABLE IF NOT EXISTS Player (
-      PlayerId           VARCHAR(36)    NOT NULL
+      PlayerGuid         VARCHAR(36)    NOT NULL
     , Username           VARCHAR(16)    NOT NULL
     , SkinBase64         VARCHAR(2048)  NOT NULL
     , LastUpdated        INTEGER        NOT NULL    DEFAULT CURRENT_TIMESTAMP
-    , PRIMARY KEY(PlayerId)
+    , PRIMARY KEY(PlayerGuid)
 );
 
 CREATE TABLE IF NOT EXISTS BrgPlayerToRenderedGraphic (
-      PlayerId           VARCHAR(36)    NOT NULL
-    , RenderId           VARCHAR(36)    NOT NULL
+      PlayerGuid         VARCHAR(36)    NOT NULL
+    , RenderGuid         VARCHAR(36)    NOT NULL
     , OrderIndex         INTEGER        NOT NULL
-    , FOREIGN KEY(PlayerId) REFERENCES Player(PlayerId)
-    , FOREIGN KEY(RenderId) REFERENCES RenderedGraphic(RenderId)
+    , FOREIGN KEY(PlayerGuid) REFERENCES Player(PlayerGuid)
+    , FOREIGN KEY(RenderGuid) REFERENCES RenderedGraphic(RenderGuid)
 );
 
 -- ============================

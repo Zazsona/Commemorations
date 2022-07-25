@@ -6,14 +6,14 @@ import java.util.UUID;
 
 public class TemplateSkinRenderDefinition
 {
-    private UUID templateId;
+    private String templateId;
     private SkinRenderType skinRenderType;
     private int startX;
     private int startY;
     private int width;
     private int height;
 
-    public TemplateSkinRenderDefinition(UUID templateId, SkinRenderType skinRenderType, int startX, int startY, int width, int height)
+    public TemplateSkinRenderDefinition(String templateId, SkinRenderType skinRenderType, int startX, int startY, int width, int height)
     {
         this.templateId = templateId;
         this.skinRenderType = skinRenderType;
@@ -23,7 +23,7 @@ public class TemplateSkinRenderDefinition
         this.height = height;
     }
 
-    public UUID getTemplateId()
+    public String getTemplateId()
     {
         return templateId;
     }

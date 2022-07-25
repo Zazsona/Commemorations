@@ -9,27 +9,27 @@ import java.util.UUID;
 
 public class RenderedGraphic
 {
-    private UUID renderId;
-    private UUID templateId;
+    private UUID renderGuid;
+    private String templateId;
     private String imageBase64;
     private long lastUpdated;
 
-    public RenderedGraphic(UUID renderId, UUID templateId, String imageBase64, long lastUpdated)
+    public RenderedGraphic(UUID renderGuid, String templateId, String imageBase64, long lastUpdated)
     {
-        this.renderId = renderId;
+        this.renderGuid = renderGuid;
         this.templateId = templateId;
         this.imageBase64 = imageBase64;
         this.lastUpdated = lastUpdated;
     }
 
     /**
-     * Gets renderId
+     * Gets renderGuid
      *
-     * @return renderId
+     * @return renderGuid
      */
-    public UUID getRenderId()
+    public UUID getRenderGuid()
     {
-        return renderId;
+        return renderGuid;
     }
 
     /**
@@ -37,7 +37,7 @@ public class RenderedGraphic
      *
      * @return templateId
      */
-    public UUID getTemplateId()
+    public String getTemplateId()
     {
         return templateId;
     }
