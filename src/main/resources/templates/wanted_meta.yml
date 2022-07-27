@@ -1,0 +1,8 @@
+id: "wanted"
+graphic: "wanted.png"
+skinDefinitions:
+  - skinRenderType: "HEAD"
+    startX: 32
+    startY: 32
+    width: 64
+    length: 64
