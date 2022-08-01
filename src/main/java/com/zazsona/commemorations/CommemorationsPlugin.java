@@ -22,6 +22,8 @@ import java.util.Comparator;
 
 public class CommemorationsPlugin extends JavaPlugin
 {
+    final static String TEMPLATES_DIRECTORY = "templates";
+
     private static String pluginName;
     private Connection conn;
 
@@ -75,6 +77,11 @@ public class CommemorationsPlugin extends JavaPlugin
             renderTemplateRepository = new RenderTemplateRepository(conn);
             renderRepository = new RenderRepository(conn, graphicRenderer, renderTemplateRepository);
             playerRepository = new CommemorationsPlayerRepository(conn, profileFetcher);
+
+            Path templatesDirPath = Paths.get(getDataFolder().getAbsolutePath(), TEMPLATES_DIRECTORY);
+            File templatesDir = templatesDirPath.toFile();
+            TemplateDataUpdater templateDataUpdater = new TemplateDataUpdater();
+            templateDataUpdater.loadTemplates(templatesDir, renderTemplateRepository, renderRepository);
         }
         catch (SQLException | IOException e)
         {
