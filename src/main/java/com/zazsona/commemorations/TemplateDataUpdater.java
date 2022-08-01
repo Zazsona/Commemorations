@@ -17,6 +17,7 @@ import java.nio.file.attribute.FileTime;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class TemplateDataUpdater
 {
@@ -25,7 +26,7 @@ public class TemplateDataUpdater
         File[] templateFiles = templatesDirectory.listFiles();
         for (File templateFile : templateFiles)
         {
-            String fileExtension = templateFile.getName().substring(templateFile.getName().lastIndexOf("[.]"));
+            String fileExtension = templateFile.getName().substring(templateFile.getName().lastIndexOf(".") + 1);
             if (!fileExtension.equalsIgnoreCase("yml"))
                 continue;
 
@@ -45,15 +46,15 @@ public class TemplateDataUpdater
             if (!templateExists || metaModifiedUnixTime > existingTemplateModifiedUnixTime || graphicModifiedUnixTime > existingTemplateModifiedUnixTime)
             {
                 BufferedImage graphic = ImageIO.read(graphicFile);
-                List<ConfigurationSection> skinDefinitionYamls = (List<ConfigurationSection>) templateYaml.getList("skinDefinitions");
+                List<Map<?, ?>> skinDefinitionMaps = templateYaml.getMapList("skinDefinitions");
                 ArrayList<TemplateSkinRenderDefinition> skinDefinitions = new ArrayList<>();
-                for (ConfigurationSection skinDefinitionYaml : skinDefinitionYamls)
+                for (Map<?, ?> skinDefinitionMap : skinDefinitionMaps)
                 {
-                    SkinRenderType renderType = SkinRenderType.valueOf(skinDefinitionYaml.getString("skinRenderType"));
-                    int startX = skinDefinitionYaml.getInt("startX");
-                    int startY = skinDefinitionYaml.getInt("startY");
-                    int width = skinDefinitionYaml.getInt("width");
-                    int height = skinDefinitionYaml.getInt("height");
+                    SkinRenderType renderType = SkinRenderType.valueOf((String) skinDefinitionMap.get("skinRenderType"));
+                    int startX = (int) skinDefinitionMap.get("startX");
+                    int startY = (int) skinDefinitionMap.get("startY");
+                    int width = (int) skinDefinitionMap.get("width");
+                    int height = (int) skinDefinitionMap.get("height");
 
                     TemplateSkinRenderDefinition skinDefinition = new TemplateSkinRenderDefinition(templateId, renderType, startX, startY, width, height);
                     skinDefinitions.add(skinDefinition);

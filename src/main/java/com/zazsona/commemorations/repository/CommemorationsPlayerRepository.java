@@ -56,6 +56,9 @@ public class CommemorationsPlayerRepository
 
     public CommemorationsPlayer addPlayer(UUID playerGuid, String username, String skinBase64) throws SQLException
     {
+        if (isPlayerRegistered(playerGuid))
+            throw new IllegalArgumentException("Player is already registered!");
+
         String sql = "INSERT INTO Player (Username, SkinBase64, LastUpdated, PlayerGuid)" +
                 "VALUES (?, ?, ?, ?);";
 
@@ -73,6 +76,9 @@ public class CommemorationsPlayerRepository
 
     public CommemorationsPlayer updatePlayer(UUID playerGuid, String username, String skinBase64) throws SQLException
     {
+        if (!isPlayerRegistered(playerGuid))
+            throw new IllegalArgumentException("Player is not registered!");
+
         String sql = "UPDATE Player\n" +
                      "SET Username = ?     \n" +
                      "  , SkinBase64 = ?   \n" +

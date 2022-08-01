@@ -101,8 +101,8 @@ public class RenderTemplateRepository
 
     public TemplateGraphic addTemplate(String templateId, String imageBase64) throws SQLException
     {
-        if (!doesTemplateExist(templateId))
-            throw new IllegalArgumentException("TemplateId does not exist.");
+        if (doesTemplateExist(templateId))
+            throw new IllegalArgumentException("TemplateId already exists!");
 
         String sql = "INSERT INTO TemplateGraphic (TemplateId, ImageBase64, LastUpdated)" +
                                           "VALUES (?,          ?,           ?          );";
