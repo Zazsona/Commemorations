@@ -57,7 +57,6 @@ public class CommemorationsPlugin extends JavaPlugin
         return playerRepository;
     }
 
-
     @Override
     public void onLoad()
     {
@@ -66,9 +65,8 @@ public class CommemorationsPlugin extends JavaPlugin
             super.onLoad();
             pluginName = getDescription().getName();
             conn = connectToCommemorationsDatabase();
-            SemanticVersion dbVer = getDatabaseVersion();
-            ArrayList<String> dcmScripts = getRequiredDcmScripts(dbVer);
-            executeDatabaseChangeManagement(dcmScripts);
+            DatabaseChangeManager dbcm = new DatabaseChangeManager(conn);
+            dbcm.upgradeDatabase();
 
             profileFetcher = new PlayerProfileFetcher();
             skinRenderer = new SkinRenderer();
@@ -85,7 +83,7 @@ public class CommemorationsPlugin extends JavaPlugin
         }
         catch (SQLException | IOException e)
         {
-            getLogger().severe("Unable to connect to database. Plugin could not be loaded.");
+            getLogger().severe("Encountered an error when loading the plugin:");
             getLogger().severe(e.toString());
             e.printStackTrace();
         }
@@ -102,91 +100,6 @@ public class CommemorationsPlugin extends JavaPlugin
         String url = sqlitePrefix + dbPath;
         Connection sqlConnection = DriverManager.getConnection(url);
         return sqlConnection;
-    }
-
-    private SemanticVersion getDatabaseVersion() throws SQLException
-    {
-        Statement metaCheckStatement = conn.createStatement();
-        metaCheckStatement.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='PluginMeta';");
-        ResultSet metaCheckResults = metaCheckStatement.getResultSet();
-        if (!metaCheckResults.next())
-            return new SemanticVersion(0, 0, 0);
-
-        Statement versionStatement = conn.createStatement();
-        versionStatement.execute("SELECT * FROM PluginMeta ORDER BY MajorVersion DESC, MinorVersion DESC, PatchVersion DESC LIMIT 1;");
-        ResultSet verResults = versionStatement.getResultSet();
-        if (!verResults.next())
-            return new SemanticVersion(0, 0, 0);
-
-        int major = verResults.getInt(1);
-        int minor = verResults.getInt(2);
-        int patch = verResults.getInt(3);
-        return new SemanticVersion(major, minor, patch);
-    }
-
-    private ArrayList<String> getRequiredDcmScripts(SemanticVersion currentVersion) throws IOException
-    {
-        try
-        {
-            String dcmDir = "dcm";
-            ArrayList<String> requiredScripts = new ArrayList<>();
-            final URI uri = this.getClass().getClassLoader().getResource(dcmDir).toURI();
-            final FileSystem scriptsFileSys = FileSystems.newFileSystem(uri, Collections.emptyMap());
-            Files.walk(scriptsFileSys.getPath("/" + dcmDir + "/")).forEach(path ->
-                                                                        {
-                                                                            String fileNameWithExtension = path.getFileName().toString();
-                                                                            if (!Files.isDirectory(path))
-                                                                            {
-                                                                                String extension = fileNameWithExtension.substring(fileNameWithExtension.lastIndexOf("."));
-                                                                                String fileName = fileNameWithExtension.replace(extension, "");
-                                                                                if (fileName.startsWith("V"))
-                                                                                {
-                                                                                    String version = fileName.substring(1);
-                                                                                    SemanticVersion fileVersion = new SemanticVersion(version);
-                                                                                    if (fileVersion.compareTo(currentVersion) >= 1)
-                                                                                        requiredScripts.add((dcmDir + "/" + fileNameWithExtension));
-                                                                                }
-
-                                                                            }
-                                                                        });
-            scriptsFileSys.close();
-            requiredScripts.sort(Comparator.naturalOrder());
-            return requiredScripts;
-        }
-        catch (Exception e)
-        {
-            throw new IOException("Unable to get DCM scripts.", e);
-        }
-    }
-
-    private void executeDatabaseChangeManagement(ArrayList<String> dcmScriptPaths) throws IOException, SQLException
-    {
-        boolean isAutoCommit = conn.getAutoCommit();
-        try
-        {
-            conn.setAutoCommit(false);
-            for (String scriptPath : dcmScriptPaths)
-            {
-                InputStream inputStream = getClass().getClassLoader().getResourceAsStream(scriptPath);
-                String sql = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-                String[] sqlStatements = sql.split(";");
-                for (String sqlStatement : sqlStatements)
-                {
-                    Statement statement = conn.createStatement();
-                    statement.execute(sqlStatement + ";");
-                }
-                conn.commit();
-            }
-        }
-        catch (Exception e)
-        {
-            conn.rollback();
-            throw e;
-        }
-        finally
-        {
-            conn.setAutoCommit(isAutoCommit);
-        }
     }
 
     @Override
