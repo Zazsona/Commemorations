@@ -2,12 +2,10 @@ package com.zazsona.commemorations.repository;
 
 import com.zazsona.commemorations.database.RenderedGraphic;
 import com.zazsona.commemorations.image.GraphicRenderer;
-import com.zazsona.commemorations.image.SkinRenderType;
 import com.zazsona.commemorations.database.TemplateSkinRenderDefinition;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.sql.*;
@@ -32,7 +30,7 @@ public class RenderRepository
     public RenderedGraphic createRender(String templateId, ArrayList<UUID> featuredPlayers) throws SQLException, IOException
     {
         BufferedImage render = renderGraphic(templateId, featuredPlayers);
-        RenderedGraphic renderedGraphic = insertRender(templateId, render);
+        RenderedGraphic renderedGraphic = insertRender(templateId, render, featuredPlayers);
         return renderedGraphic;
     }
 
@@ -136,7 +134,7 @@ public class RenderRepository
         String templateId = oldRender.getTemplateId();
         ArrayList<UUID> featuredPlayers = getRenderPlayerGuids(renderGuid);
         BufferedImage renderedGraphic = renderGraphic(templateId, featuredPlayers);
-        RenderedGraphic newRender = updateRender(renderGuid, templateId, renderedGraphic);
+        RenderedGraphic newRender = updateRender(renderGuid, templateId, renderedGraphic, featuredPlayers);
         return newRender;
     }
 
@@ -151,49 +149,108 @@ public class RenderRepository
         return render;
     }
 
-    private RenderedGraphic insertRender(String templateId, BufferedImage render) throws SQLException, IOException
+    private RenderedGraphic insertRender(String templateId, BufferedImage render, ArrayList<UUID> featuredPlayers) throws SQLException, IOException
     {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        ImageIO.write(render, "png", byteStream);
-        String imageBase64 = Base64.getEncoder().encodeToString(byteStream.toByteArray());
+        boolean isAutoCommit = conn.getAutoCommit();
+        try
+        {
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            ImageIO.write(render, "png", byteStream);
+            String imageBase64 = Base64.getEncoder().encodeToString(byteStream.toByteArray());
 
-        String sql = "INSERT INTO RenderedGraphic (RenderGuid, TemplateId, ImageBase64, LastUpdated)\n" +
-                     "VALUES (?, ?, ?, ?)";
+            conn.setAutoCommit(false);
 
-        UUID renderGuid = UUID.randomUUID();
-        long lastUpdated = Instant.now().getEpochSecond();
-        PreparedStatement renderInsert = conn.prepareStatement(sql);
-        renderInsert.setString(1, renderGuid.toString());
-        renderInsert.setString(2, templateId);
-        renderInsert.setString(3, imageBase64);
-        renderInsert.setLong(4, lastUpdated);
-        renderInsert.executeUpdate();
+            String renderInsertSql = "INSERT INTO RenderedGraphic (RenderGuid, TemplateId, ImageBase64, LastUpdated)\n" +
+                                                          "VALUES (?,          ?,          ?,           ?          )";
 
-        RenderedGraphic renderedGraphic = new RenderedGraphic(renderGuid, templateId, imageBase64, lastUpdated);
-        return renderedGraphic;
+            UUID renderGuid = UUID.randomUUID();
+            long lastUpdated = Instant.now().getEpochSecond();
+            PreparedStatement renderInsert = conn.prepareStatement(renderInsertSql);
+            renderInsert.setString(1, renderGuid.toString());
+            renderInsert.setString(2, templateId);
+            renderInsert.setString(3, imageBase64);
+            renderInsert.setLong(4, lastUpdated);
+            renderInsert.executeUpdate();
+
+            if (featuredPlayers.size() > 0)
+                insertRenderPlayerBridge(templateId, featuredPlayers);
+
+            conn.commit();
+            RenderedGraphic renderedGraphic = new RenderedGraphic(renderGuid, templateId, imageBase64, lastUpdated);
+            return renderedGraphic;
+        }
+        catch (SQLException | IOException e)
+        {
+            conn.rollback();
+            throw e;
+        }
+        finally
+        {
+            conn.setAutoCommit(isAutoCommit);
+        }
     }
 
-    private RenderedGraphic updateRender(UUID renderGuid, String templateId, BufferedImage render) throws SQLException, IOException
+    private RenderedGraphic updateRender(UUID renderGuid, String templateId, BufferedImage render, ArrayList<UUID> featuredPlayers) throws SQLException, IOException
     {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        ImageIO.write(render, "png", byteStream);
-        String imageBase64 = Base64.getEncoder().encodeToString(byteStream.toByteArray());
+        boolean isAutoCommit = conn.getAutoCommit();
+        try
+        {
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            ImageIO.write(render, "png", byteStream);
+            String imageBase64 = Base64.getEncoder().encodeToString(byteStream.toByteArray());
 
-        String sql = "UPDATE RenderedGraphic\n" +
-                     "SET TemplateId = ?\n" +
-                     "  , ImageBase64 = ?\n" +
-                     "  , LastUpdated = ?\n" +
-                     "WHERE RenderGuid = ?;";
+            String sql = "UPDATE RenderedGraphic\n" +
+                    "SET TemplateId = ?\n" +
+                    "  , ImageBase64 = ?\n" +
+                    "  , LastUpdated = ?\n" +
+                    "WHERE RenderGuid = ?;";
 
-        long lastUpdated = Instant.now().getEpochSecond();
-        PreparedStatement renderUpdate = conn.prepareStatement(sql);
-        renderUpdate.setString(1, templateId);
-        renderUpdate.setString(2, imageBase64);
-        renderUpdate.setLong(3, lastUpdated);
-        renderUpdate.setString(4, renderGuid.toString());
-        renderUpdate.executeUpdate();
+            long lastUpdated = Instant.now().getEpochSecond();
+            PreparedStatement renderUpdate = conn.prepareStatement(sql);
+            renderUpdate.setString(1, templateId);
+            renderUpdate.setString(2, imageBase64);
+            renderUpdate.setLong(3, lastUpdated);
+            renderUpdate.setString(4, renderGuid.toString());
+            renderUpdate.executeUpdate();
 
-        RenderedGraphic renderedGraphic = new RenderedGraphic(renderGuid, templateId, imageBase64, lastUpdated);
-        return renderedGraphic;
+            String playerBrgDeleteSql = "DELETE FROM BrgPlayerToRenderedGraphic WHERE RenderGuid = ?;";
+            PreparedStatement deleteStatement = conn.prepareStatement(playerBrgDeleteSql);
+            deleteStatement.setString(1, renderGuid.toString());
+            deleteStatement.executeUpdate();
+
+            if (featuredPlayers.size() > 0)
+                insertRenderPlayerBridge(templateId, featuredPlayers);
+
+            conn.commit();
+            RenderedGraphic renderedGraphic = new RenderedGraphic(renderGuid, templateId, imageBase64, lastUpdated);
+            return renderedGraphic;
+        }
+        catch (IOException | SQLException e)
+        {
+            conn.rollback();
+            throw e;
+        }
+        finally
+        {
+            conn.setAutoCommit(isAutoCommit);
+        }
+    }
+
+    private void insertRenderPlayerBridge(String templateId, ArrayList<UUID> featuredPlayers) throws SQLException
+    {
+        String playerBrgInsertSql = "INSERT INTO BrgPlayerToRenderedGraphic (PlayerGuid, RenderGuid, OrderIndex)\n" +
+                "VALUES (?,          ?,          ?         )";
+        for (int i = 1; i < featuredPlayers.size(); i++)
+            playerBrgInsertSql += ", (?, ?, ?)";
+
+        int argNo = 0;
+        PreparedStatement playerBrgInsert = conn.prepareStatement(playerBrgInsertSql);
+        for (int i = 0; i < featuredPlayers.size(); i++)
+        {
+            playerBrgInsert.setString(++argNo, featuredPlayers.get(i).toString());
+            playerBrgInsert.setString(++argNo, templateId);
+            playerBrgInsert.setInt(++argNo, i);
+        }
+        playerBrgInsert.executeUpdate();
     }
 }
