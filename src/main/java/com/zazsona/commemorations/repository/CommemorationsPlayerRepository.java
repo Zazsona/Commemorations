@@ -26,6 +26,16 @@ public class CommemorationsPlayerRepository
         this.profileFetcher = profileFetcher;
     }
 
+    public boolean isPlayerRegistered(UUID playerGuid) throws SQLException
+    {
+        String sql = "SELECT PlayerGuid FROM Player WHERE PlayerGuid = ?;";
+        PreparedStatement selectStatement = conn.prepareStatement(sql);
+        selectStatement.setString(1, playerGuid.toString());
+        selectStatement.execute();
+        ResultSet selectResults = selectStatement.getResultSet();
+        return selectResults.next();
+    }
+
     public CommemorationsPlayer getPlayer(UUID playerGuid) throws SQLException
     {
         String sql = "SELECT PlayerGuid, Username, SkinBase64, LastUpdated FROM Player WHERE PlayerGuid = ?;";
@@ -44,69 +54,40 @@ public class CommemorationsPlayerRepository
         return player;
     }
 
-    public CommemorationsPlayer registerPlayer(UUID playerGuid) throws SQLException, IOException
+    public CommemorationsPlayer addPlayer(UUID playerGuid, String username, String skinBase64) throws SQLException
     {
-        ProfileResponse playerProfile = profileFetcher.fetchPlayerProfile(playerGuid);
-        String playerName = playerProfile.getName();
+        String sql = "INSERT INTO Player (Username, SkinBase64, LastUpdated, PlayerGuid)" +
+                "VALUES (?, ?, ?, ?);";
+
         long lastUpdated = Instant.now().getEpochSecond();
-        BufferedImage skin = profileFetcher.fetchPlayerSkin(playerGuid);
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        ImageIO.write(skin, "png", byteStream);
-        String skinBase64 = Base64.getEncoder().encodeToString(byteStream.toByteArray());
+        PreparedStatement insertStatement = conn.prepareStatement(sql);
+        insertStatement.setString(1, username);
+        insertStatement.setString(2, skinBase64);
+        insertStatement.setLong(3, lastUpdated);
+        insertStatement.setString(4, playerGuid.toString());
+        insertStatement.executeUpdate();
 
-        boolean isNewPlayer = isPlayerRegistered(playerGuid);
-        String playerSql = "";
-        if (!isNewPlayer)
-        {
-            playerSql = "UPDATE Player\n" +
-                        "SET Username = ? \n" +
-                        "  , SkinBase64 = ? \n" +
-                        "  , LastUpdated = ? \n" +
-                        "WHERE PlayerGuid = ?;";
-        }
-        else
-        {
-            playerSql = "INSERT INTO Player (Username, SkinBase64, LastUpdated, PlayerGuid)" +
-                        "VALUES (?, ?, ?, ?);";
-        }
-
-        PreparedStatement playerStatement = conn.prepareStatement(playerSql);
-        playerStatement.setString(1, playerName);
-        playerStatement.setString(2, skinBase64);
-        playerStatement.setLong(3, lastUpdated);
-        playerStatement.setString(4, playerGuid.toString());
-        playerStatement.executeUpdate();
-
-        if (!isNewPlayer)
-            updatePlayerRenders(playerGuid);
-
-        CommemorationsPlayer commemorationsPlayer = new CommemorationsPlayer(playerGuid, playerName, skinBase64, lastUpdated);
+        CommemorationsPlayer commemorationsPlayer = new CommemorationsPlayer(playerGuid, username, skinBase64, lastUpdated);
         return commemorationsPlayer;
     }
 
-    private void updatePlayerRenders(UUID playerGuid) throws SQLException, IOException
+    public CommemorationsPlayer updatePlayer(UUID playerGuid, String username, String skinBase64) throws SQLException
     {
-        GraphicRepository graphicRepository = CommemorationsPlugin.getInstance().getGraphicRepository();
-        String sql = "SELECT RenderGuid FROM BrgPlayerToRenderedGraphic WHERE PlayerGuid = ?;";
-        PreparedStatement renderStatement = conn.prepareStatement(sql);
-        renderStatement.setString(1, playerGuid.toString());
-        renderStatement.execute();
-        ResultSet selectResults = renderStatement.getResultSet();
-        ArrayList<UUID> renderGuids = new ArrayList<>();
-        while (selectResults.next())
-            renderGuids.add(UUID.fromString(selectResults.getString("RenderGuid")));
+        String sql = "UPDATE Player\n" +
+                     "SET Username = ?     \n" +
+                     "  , SkinBase64 = ?   \n" +
+                     "  , LastUpdated = ?  \n" +
+                     "WHERE PlayerGuid = ?;  ";
 
-        for (UUID renderGuid : renderGuids)
-            graphicRepository.updateRender(renderGuid);
-    }
+        long lastUpdated = Instant.now().getEpochSecond();
+        PreparedStatement insertStatement = conn.prepareStatement(sql);
+        insertStatement.setString(1, username);
+        insertStatement.setString(2, skinBase64);
+        insertStatement.setLong(3, lastUpdated);
+        insertStatement.setString(4, playerGuid.toString());
+        insertStatement.executeUpdate();
 
-    public boolean isPlayerRegistered(UUID playerGuid) throws SQLException
-    {
-        String sql = "SELECT PlayerGuid FROM Player WHERE PlayerGuid = ?;";
-        PreparedStatement selectStatement = conn.prepareStatement(sql);
-        selectStatement.setString(1, playerGuid.toString());
-        selectStatement.execute();
-        ResultSet selectResults = selectStatement.getResultSet();
-        return selectResults.next();
+        CommemorationsPlayer commemorationsPlayer = new CommemorationsPlayer(playerGuid, username, skinBase64, lastUpdated);
+        return commemorationsPlayer;
     }
 }
