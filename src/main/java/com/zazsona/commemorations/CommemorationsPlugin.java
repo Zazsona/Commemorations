@@ -4,7 +4,8 @@ import com.zazsona.commemorations.image.GraphicRenderer;
 import com.zazsona.commemorations.image.PlayerProfileFetcher;
 import com.zazsona.commemorations.image.SkinRenderer;
 import com.zazsona.commemorations.repository.CommemorationsPlayerRepository;
-import com.zazsona.commemorations.repository.GraphicRepository;
+import com.zazsona.commemorations.repository.RenderRepository;
+import com.zazsona.commemorations.repository.RenderTemplateRepository;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -24,7 +25,8 @@ public class CommemorationsPlugin extends JavaPlugin
     private static String pluginName;
     private Connection conn;
 
-    private GraphicRepository graphicRepository;
+    private RenderTemplateRepository renderTemplateRepository;
+    private RenderRepository renderRepository;
     private CommemorationsPlayerRepository playerRepository;
 
     private PlayerProfileFetcher profileFetcher;
@@ -39,9 +41,13 @@ public class CommemorationsPlugin extends JavaPlugin
             throw new NullPointerException("The plugin has not yet initialised.");
     }
 
-    public GraphicRepository getGraphicRepository()
+    public RenderTemplateRepository getRenderTemplateRepository()
     {
-        return graphicRepository;
+        return renderTemplateRepository;
+    }
+    public RenderRepository getRenderRepository()
+    {
+        return renderRepository;
     }
 
     public CommemorationsPlayerRepository getPlayerRepository()
@@ -66,7 +72,8 @@ public class CommemorationsPlugin extends JavaPlugin
             skinRenderer = new SkinRenderer();
             graphicRenderer = new GraphicRenderer(skinRenderer);
 
-            graphicRepository = new GraphicRepository(conn, graphicRenderer);
+            renderTemplateRepository = new RenderTemplateRepository(conn);
+            renderRepository = new RenderRepository(conn, graphicRenderer, renderTemplateRepository);
             playerRepository = new CommemorationsPlayerRepository(conn, profileFetcher);
         }
         catch (SQLException | IOException e)
@@ -179,7 +186,7 @@ public class CommemorationsPlugin extends JavaPlugin
     public void onEnable()
     {
         super.onEnable();
-        CommemorationsPlayerDataUpdater playerDataUpdater = new CommemorationsPlayerDataUpdater(profileFetcher);
+        CommemorationsPlayerDataUpdater playerDataUpdater = new CommemorationsPlayerDataUpdater(profileFetcher, renderRepository);
         getServer().getPluginManager().registerEvents(playerDataUpdater, this);
     }
 
