@@ -11,14 +11,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
+import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 
 public class CommemorationsPlugin extends JavaPlugin
 {
@@ -66,7 +61,9 @@ public class CommemorationsPlugin extends JavaPlugin
             pluginName = getDescription().getName();
             conn = connectToCommemorationsDatabase();
             DatabaseChangeManager dbcm = new DatabaseChangeManager(conn);
+            SemanticVersion existingVersion = dbcm.getDatabaseVersion();
             dbcm.upgradeDatabase();
+            SemanticVersion currentVersion = dbcm.getDatabaseVersion();
 
             profileFetcher = new PlayerProfileFetcher();
             skinRenderer = new SkinRenderer();
@@ -79,9 +76,10 @@ public class CommemorationsPlugin extends JavaPlugin
             Path templatesDirPath = Paths.get(getDataFolder().getAbsolutePath(), TEMPLATES_DIRECTORY);
             File templatesDir = templatesDirPath.toFile();
             TemplateDataUpdater templateDataUpdater = new TemplateDataUpdater();
+            templateDataUpdater.extractTemplateResourcesFromJar(templatesDir, existingVersion, currentVersion);
             templateDataUpdater.loadTemplates(templatesDir, renderTemplateRepository, renderRepository);
         }
-        catch (SQLException | IOException e)
+        catch (SQLException | IOException | URISyntaxException e)
         {
             getLogger().severe("Encountered an error when loading the plugin:");
             getLogger().severe(e.toString());

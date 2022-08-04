@@ -5,17 +5,21 @@ import com.zazsona.commemorations.database.TemplateSkinRenderDefinition;
 import com.zazsona.commemorations.image.SkinRenderType;
 import com.zazsona.commemorations.repository.RenderRepository;
 import com.zazsona.commemorations.repository.RenderTemplateRepository;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.util.FileUtil;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
+import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.*;
 import java.nio.file.attribute.FileTime;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -74,6 +78,64 @@ public class TemplateDataUpdater
                     templateRepository.updateTemplateSkinDefinitions(templateId, skinDefinitions);
                 }
             }
+        }
+    }
+
+    public void extractTemplateResourcesFromJar(File templatesDirectory, SemanticVersion previousVersion, SemanticVersion currentVersion) throws IOException, URISyntaxException
+    {
+        if (previousVersion.compareTo(currentVersion) >= 0)
+            return;
+
+        String internalTemplatesDirName = "templates";
+        String templatesBackupDirName = String.format("V%s", previousVersion);
+        Path externalTemplatesDirPath = templatesDirectory.toPath();
+        Path templatesBackupDirPath = Paths.get(externalTemplatesDirPath.toString(), templatesBackupDirName);
+        File templatesBackupDir = templatesBackupDirPath.toFile();
+
+        ArrayList<Path> internalTemplatePathList = new ArrayList<>();
+        URI uri = this.getClass().getClassLoader().getResource(internalTemplatesDirName).toURI();
+        FileSystem templatesFileSys = FileSystems.newFileSystem(uri, Collections.emptyMap());
+        Files.walk(templatesFileSys.getPath("/" + internalTemplatesDirName + "/")).forEach(path ->
+                                                                       {
+                                                                           if (!Files.isDirectory(path))
+                                                                               internalTemplatePathList.add(path);
+                                                                       });
+        templatesFileSys.close();
+
+        for (Path path : internalTemplatePathList)
+        {
+            String fileName = path.getFileName().toString();
+            Path externalFilePath = Paths.get(externalTemplatesDirPath.toString(), fileName);
+            File externalFile = externalFilePath.toFile();
+            if (externalFile.exists())
+            {
+                if (!templatesBackupDir.exists())
+                    templatesBackupDir.mkdirs();
+                Files.move(externalFilePath, Paths.get(templatesBackupDirPath.toString(), fileName), StandardCopyOption.REPLACE_EXISTING);
+            }
+
+
+            String resourceName = path.toString().substring(1); // Remove initial /
+            exportResourceFile(resourceName, externalFile);
+        }
+    }
+
+    private void exportResourceFile(String resourceFile, File outputFile) throws IOException
+    {
+        if (!outputFile.exists())
+        {
+            outputFile.getParentFile().mkdirs();
+            outputFile.createNewFile();
+        }
+
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(resourceFile);
+        OutputStream outputStream = new FileOutputStream(outputFile);
+        byte[] buffer = new byte[8 * 1024];
+        int providedBytes = inputStream.read(buffer);
+        while (providedBytes != -1)
+        {
+            outputStream.write(buffer, 0, providedBytes);
+            providedBytes = inputStream.read(buffer);
         }
     }
 }
