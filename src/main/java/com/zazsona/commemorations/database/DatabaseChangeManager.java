@@ -1,4 +1,6 @@
-package com.zazsona.commemorations;
+package com.zazsona.commemorations.database;
+
+import com.zazsona.commemorations.SemanticVersion;
 
 import java.io.IOException;
 import java.io.InputStream;
