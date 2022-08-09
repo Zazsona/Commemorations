@@ -1,5 +1,6 @@
 package com.zazsona.commemorations;
 
+import com.zazsona.commemorations.database.DatabaseChangeManager;
 import com.zazsona.commemorations.image.GraphicRenderer;
 import com.zazsona.commemorations.image.PlayerProfileFetcher;
 import com.zazsona.commemorations.image.SkinRenderer;
@@ -106,6 +107,9 @@ public class CommemorationsPlugin extends JavaPlugin
         super.onEnable();
         CommemorationsPlayerDataUpdater playerDataUpdater = new CommemorationsPlayerDataUpdater(profileFetcher, renderRepository);
         getServer().getPluginManager().registerEvents(playerDataUpdater, this);
+
+        AdvancementListener advancementListener = new AdvancementListener(renderRepository);
+        getServer().getPluginManager().registerEvents(advancementListener, this);
     }
 
     @Override
