@@ -1,5 +1,6 @@
 id: "wanted"
-graphic: "wanted.png"
+backgroundGraphic: "wanted_background.png"
+foregroundGraphic: ""
 skinDefinitions:
   - skinRenderType: "HEAD"
     startX: 32

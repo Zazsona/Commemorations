@@ -14,9 +14,10 @@ CREATE TABLE IF NOT EXISTS PluginMeta (
 -- ============================
 
 CREATE TABLE IF NOT EXISTS TemplateGraphic (
-      TemplateId         VARCHAR(255)   NOT NULL
-    , ImageBase64        VARCHAR(2048)  NOT NULL
-    , LastUpdated        INTEGER        NOT NULL    DEFAULT CURRENT_TIMESTAMP
+      TemplateId                   VARCHAR(255)   NOT NULL
+    , BackgroundImageBase64        VARCHAR(2048)  NOT NULL
+    , ForegroundImageBase64        VARCHAR(2048)  NOT NULL
+    , LastUpdated                  INTEGER        NOT NULL    DEFAULT CURRENT_TIMESTAMP
     , PRIMARY KEY(TemplateId)
 );
 

@@ -9,13 +9,15 @@ import java.util.Base64;
 public class TemplateGraphic
 {
     private String templateId;
-    private String imageBase64;
+    private String backgroundImageBase64;
+    private String foregroundImageBase64;
     private long lastUpdated;
 
-    public TemplateGraphic(String templateId, String imageBase64, long lastUpdated)
+    public TemplateGraphic(String templateId, String backgroundImageBase64, String foregroundImageBase64, long lastUpdated)
     {
         this.templateId = templateId;
-        this.imageBase64 = imageBase64;
+        this.backgroundImageBase64 = backgroundImageBase64;
+        this.foregroundImageBase64 = foregroundImageBase64;
         this.lastUpdated = lastUpdated;
     }
 
@@ -29,14 +31,14 @@ public class TemplateGraphic
         return templateId;
     }
 
-    /**
-     * Gets imageBase64
-     *
-     * @return imageBase64
-     */
-    public String getImageBase64()
+    public String getBackgroundImageBase64()
     {
-        return imageBase64;
+        return backgroundImageBase64;
+    }
+
+    public String getForegroundImageBase64()
+    {
+        return foregroundImageBase64;
     }
 
     /**
@@ -50,13 +52,25 @@ public class TemplateGraphic
     }
 
     /**
-     * Converts the Image Base64 into a BufferedImage
+     * Converts the Background Image Base64 into a BufferedImage
      * @return the rendered image
      * @throws IOException - Unable to generate image from Base64
      */
-    public BufferedImage getImage() throws IOException
+    public BufferedImage getBackgroundImage() throws IOException
     {
-        byte[] decodedBytes = Base64.getDecoder().decode(imageBase64);
+        byte[] decodedBytes = Base64.getDecoder().decode(backgroundImageBase64);
+        BufferedImage image = ImageIO.read(new ByteArrayInputStream(decodedBytes));
+        return image;
+    }
+
+    /**
+     * Converts the Foreground Image Base64 into a BufferedImage
+     * @return the rendered image
+     * @throws IOException - Unable to generate image from Base64
+     */
+    public BufferedImage getForegroundImage() throws IOException
+    {
+        byte[] decodedBytes = Base64.getDecoder().decode(foregroundImageBase64);
         BufferedImage image = ImageIO.read(new ByteArrayInputStream(decodedBytes));
         return image;
     }

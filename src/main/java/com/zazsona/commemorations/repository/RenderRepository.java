@@ -1,6 +1,7 @@
 package com.zazsona.commemorations.repository;
 
 import com.zazsona.commemorations.database.RenderedGraphic;
+import com.zazsona.commemorations.database.TemplateGraphic;
 import com.zazsona.commemorations.image.GraphicRenderer;
 import com.zazsona.commemorations.database.TemplateSkinRenderDefinition;
 
@@ -140,12 +141,13 @@ public class RenderRepository
 
     private BufferedImage renderGraphic(String templateId, ArrayList<UUID> featuredPlayers) throws SQLException, IOException
     {
-        BufferedImage template = templateRepository.getTemplate(templateId).getImage();
-        ArrayList<TemplateSkinRenderDefinition> skinDefinitions = templateRepository.getSkinRenderDefinitions(templateId);
-        if (template == null)
+        if (!templateRepository.doesTemplateExist(templateId))
             throw new IllegalArgumentException("Template with Id " + templateId + " not found.");
-
-        BufferedImage render = graphicRenderer.renderGraphic(template, skinDefinitions, featuredPlayers);
+        TemplateGraphic template = templateRepository.getTemplate(templateId);
+        BufferedImage background = template.getBackgroundImage();
+        BufferedImage foreground = template.getForegroundImage();
+        ArrayList<TemplateSkinRenderDefinition> skinDefinitions = templateRepository.getSkinRenderDefinitions(templateId);
+        BufferedImage render = graphicRenderer.renderGraphic(background, foreground, skinDefinitions, featuredPlayers);
         return render;
     }
 

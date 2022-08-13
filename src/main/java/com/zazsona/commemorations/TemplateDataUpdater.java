@@ -3,12 +3,11 @@ package com.zazsona.commemorations;
 import com.zazsona.commemorations.database.RenderedGraphic;
 import com.zazsona.commemorations.database.TemplateSkinRenderDefinition;
 import com.zazsona.commemorations.image.SkinRenderType;
+import com.zazsona.commemorations.image.TemplateImageType;
 import com.zazsona.commemorations.repository.RenderRepository;
 import com.zazsona.commemorations.repository.RenderTemplateRepository;
-import org.bukkit.Bukkit;
-import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.util.FileUtil;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -16,7 +15,6 @@ import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.*;
-import java.nio.file.attribute.FileTime;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +23,7 @@ import java.util.Map;
 
 public class TemplateDataUpdater
 {
-    public void loadTemplates(File templatesDirectory, RenderTemplateRepository templateRepository, RenderRepository renderRepository) throws IOException, SQLException
+    public void loadTemplates(File templatesDirectory, RenderTemplateRepository templateRepository, RenderRepository renderRepository) throws IOException, SQLException, InvalidConfigurationException
     {
         File[] templateFiles = templatesDirectory.listFiles();
         for (File templateFile : templateFiles)
@@ -34,22 +32,30 @@ public class TemplateDataUpdater
             if (!fileExtension.equalsIgnoreCase("yml"))
                 continue;
 
+            // Parse YAML
             YamlConfiguration templateYaml = YamlConfiguration.loadConfiguration(templateFile);
 
             String templateId = templateYaml.getString("id");
-            String graphicFileName = templateYaml.getString("graphic");
-            File graphicFile = new File(templatesDirectory.getAbsolutePath() + "/" + graphicFileName);
+            String bgGraphicFileName = templateYaml.getString("backgroundGraphic");
+            String fgGraphicFileName = templateYaml.getString("foregroundGraphic");
+            File bgGraphicFile = (!bgGraphicFileName.equals("")) ? new File(templatesDirectory.getAbsolutePath() + "/" + bgGraphicFileName) : null;
+            File fgGraphicFile = (!fgGraphicFileName.equals("")) ? new File(templatesDirectory.getAbsolutePath() + "/" + fgGraphicFileName) : null;
 
-            FileTime metaModifiedTime = Files.getLastModifiedTime(templateFile.toPath());
-            long metaModifiedUnixTime = metaModifiedTime.toMillis() / 1000;
-            FileTime graphicModifiedTime = Files.getLastModifiedTime(graphicFile.toPath());
-            long graphicModifiedUnixTime = graphicModifiedTime.toMillis() / 1000;
+            if (bgGraphicFile == null && fgGraphicFile == null)
+                throw new InvalidConfigurationException("Invalid Template: " + templateFile.getName() +" must specify a graphic for the Background and/or the Foreground.");
+
+            // Get Modified Times
             boolean templateExists = templateRepository.doesTemplateExist(templateId);
+            long metaModifiedUnixTime = Files.getLastModifiedTime(templateFile.toPath()).toMillis() / 1000;
+            long bgGraphicModifiedUnixTime = (bgGraphicFile != null) ? Files.getLastModifiedTime(bgGraphicFile.toPath()).toMillis() / 1000 : 0;
+            long fgGraphicModifiedUnixTime = (fgGraphicFile != null) ? Files.getLastModifiedTime(fgGraphicFile.toPath()).toMillis() / 1000 : 0;
             long existingTemplateModifiedUnixTime = (templateExists) ? templateRepository.getTemplate(templateId).getLastUpdated() : 0;
 
-            if (!templateExists || metaModifiedUnixTime > existingTemplateModifiedUnixTime || graphicModifiedUnixTime > existingTemplateModifiedUnixTime)
+            // Update Database
+            if (!templateExists || metaModifiedUnixTime > existingTemplateModifiedUnixTime || bgGraphicModifiedUnixTime > existingTemplateModifiedUnixTime || fgGraphicModifiedUnixTime > existingTemplateModifiedUnixTime)
             {
-                BufferedImage graphic = ImageIO.read(graphicFile);
+                BufferedImage bgGraphic = (bgGraphicFile != null) ? ImageIO.read(bgGraphicFile) : null;
+                BufferedImage fgGraphic = (fgGraphicFile != null) ? ImageIO.read(fgGraphicFile) : null;
                 List<Map<?, ?>> skinDefinitionMaps = templateYaml.getMapList("skinDefinitions");
                 ArrayList<TemplateSkinRenderDefinition> skinDefinitions = new ArrayList<>();
                 for (Map<?, ?> skinDefinitionMap : skinDefinitionMaps)
@@ -66,17 +72,15 @@ public class TemplateDataUpdater
 
                 if (templateExists)
                 {
-                    templateRepository.updateTemplateGraphic(templateId, graphic);
+                    templateRepository.updateTemplateGraphic(templateId, bgGraphic, TemplateImageType.BACKGROUND);
+                    templateRepository.updateTemplateGraphic(templateId, fgGraphic, TemplateImageType.FOREGROUND);
                     templateRepository.updateTemplateSkinDefinitions(templateId, skinDefinitions);
                     ArrayList<RenderedGraphic> renders = renderRepository.getRendersFromTemplate(templateId);
                     for (RenderedGraphic render : renders)
                         renderRepository.refreshRender(render.getRenderGuid());
                 }
                 else
-                {
-                    templateRepository.addTemplate(templateId, graphic);
-                    templateRepository.updateTemplateSkinDefinitions(templateId, skinDefinitions);
-                }
+                    templateRepository.addTemplate(templateId, bgGraphic, fgGraphic, skinDefinitions);
             }
         }
     }

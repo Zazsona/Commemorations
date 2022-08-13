@@ -1,24 +1,18 @@
 package com.zazsona.commemorations.repository;
 
-import com.zazsona.commemorations.database.RenderedGraphic;
+import com.zazsona.commemorations.image.TemplateImageType;
 import com.zazsona.commemorations.database.TemplateGraphic;
 import com.zazsona.commemorations.database.TemplateSkinRenderDefinition;
-import com.zazsona.commemorations.image.GraphicRenderer;
 import com.zazsona.commemorations.image.SkinRenderType;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.UUID;
 
 public class RenderTemplateRepository
 {
@@ -41,7 +35,7 @@ public class RenderTemplateRepository
 
     public TemplateGraphic getTemplate(String templateId) throws SQLException, IOException
     {
-        String sql = "SELECT ImageBase64, LastUpdated FROM TemplateGraphic WHERE TemplateId = ?;";
+        String sql = "SELECT BackgroundImageBase64, ForegroundImageBase64, LastUpdated FROM TemplateGraphic WHERE TemplateId = ?;";
         PreparedStatement selectStatement = conn.prepareStatement(sql);
         selectStatement.setString(1, templateId);
         selectStatement.execute();
@@ -49,9 +43,10 @@ public class RenderTemplateRepository
         if (!selectResults.next())
             return null;
 
-        String imageBase64 = selectResults.getString("ImageBase64");
+        String backgroundImageBase64 = selectResults.getString("BackgroundImageBase64");
+        String foregroundImageBase64 = selectResults.getString("ForegroundImageBase64");
         long lastUpdated = selectResults.getLong("LastUpdated");
-        TemplateGraphic templateGraphic = new TemplateGraphic(templateId, imageBase64, lastUpdated);
+        TemplateGraphic templateGraphic = new TemplateGraphic(templateId, backgroundImageBase64, foregroundImageBase64, lastUpdated);
         return templateGraphic;
     }
 
@@ -77,63 +72,85 @@ public class RenderTemplateRepository
         return definitions;
     }
 
-    public TemplateGraphic addTemplate(String templateId, BufferedImage image, ArrayList<TemplateSkinRenderDefinition> skinDefinitions) throws SQLException, IOException
+    public TemplateGraphic addTemplate(String templateId, BufferedImage backgroundImage, BufferedImage foregroundImage, ArrayList<TemplateSkinRenderDefinition> skinDefinitions) throws SQLException, IOException
     {
-        TemplateGraphic templateGraphic = addTemplate(templateId, image);
+        TemplateGraphic templateGraphic = addTemplate(templateId, backgroundImage, foregroundImage);
         updateTemplateSkinDefinitions(templateId, skinDefinitions);
         return templateGraphic;
     }
 
-    public TemplateGraphic addTemplate(String templateId, String imageBase64, ArrayList<TemplateSkinRenderDefinition> skinDefinitions) throws SQLException
+    public TemplateGraphic addTemplate(String templateId, String backgroundImageBase64, String foregroundImageBase64, ArrayList<TemplateSkinRenderDefinition> skinDefinitions) throws SQLException
     {
-        TemplateGraphic templateGraphic = addTemplate(templateId, imageBase64);
+        TemplateGraphic templateGraphic = addTemplate(templateId, backgroundImageBase64, foregroundImageBase64);
         updateTemplateSkinDefinitions(templateId, skinDefinitions);
         return templateGraphic;
     }
 
-    public TemplateGraphic addTemplate(String templateId, BufferedImage image) throws SQLException, IOException
+    public TemplateGraphic addTemplate(String templateId, BufferedImage backgroundImage, BufferedImage foregroundImage) throws SQLException, IOException
     {
-        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", byteStream);
-        String imageBase64 = Base64.getEncoder().encodeToString(byteStream.toByteArray());
-        return addTemplate(templateId, imageBase64);
+        String backgroundImageBase64 = "";
+        if (backgroundImage != null)
+        {
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            ImageIO.write(backgroundImage, "png", byteStream);
+            backgroundImageBase64 = Base64.getEncoder().encodeToString(byteStream.toByteArray());
+        }
+
+        String foregroundImageBase64 = "";
+        if (foregroundImage != null)
+        {
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            ImageIO.write(foregroundImage, "png", byteStream);
+            foregroundImageBase64 = Base64.getEncoder().encodeToString(byteStream.toByteArray());
+        }
+        return addTemplate(templateId, backgroundImageBase64, foregroundImageBase64);
     }
 
-    public TemplateGraphic addTemplate(String templateId, String imageBase64) throws SQLException
+    public TemplateGraphic addTemplate(String templateId, String backgroundImageBase64, String foregroundImageBase64) throws SQLException
     {
         if (doesTemplateExist(templateId))
             throw new IllegalArgumentException("TemplateId already exists!");
+        if ((backgroundImageBase64 == null || backgroundImageBase64.equals("")) && (foregroundImageBase64 == null || foregroundImageBase64.equals("")))
+            throw new IllegalArgumentException("Both images cannot be null.");
+        if (backgroundImageBase64 == null)
+            backgroundImageBase64 = "";
+        if (foregroundImageBase64 == null)
+            foregroundImageBase64 = "";
 
-        String sql = "INSERT INTO TemplateGraphic (TemplateId, ImageBase64, LastUpdated)" +
-                                          "VALUES (?,          ?,           ?          );";
+        String sql = "INSERT INTO TemplateGraphic (TemplateId, BackgroundImageBase64, ForegroundImageBase64, LastUpdated)" +
+                                          "VALUES (?,          ?,                     ?,                     ?          );";
 
         long lastUpdated = Instant.now().getEpochSecond();
         PreparedStatement insertStatement = conn.prepareStatement(sql);
         insertStatement.setString(1, templateId);
-        insertStatement.setString(2, imageBase64);
-        insertStatement.setLong(3, lastUpdated);
+        insertStatement.setString(2, backgroundImageBase64);
+        insertStatement.setString(3, foregroundImageBase64);
+        insertStatement.setLong(4, lastUpdated);
         insertStatement.executeUpdate();
 
-        TemplateGraphic templateGraphic = new TemplateGraphic(templateId, imageBase64, lastUpdated);
+        TemplateGraphic templateGraphic = new TemplateGraphic(templateId, backgroundImageBase64, foregroundImageBase64, lastUpdated);
         return templateGraphic;
     }
 
-    public TemplateGraphic updateTemplateGraphic(String templateId, BufferedImage image) throws SQLException, IOException
+    public void updateTemplateGraphic(String templateId, BufferedImage image, TemplateImageType imageType) throws SQLException, IOException
     {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         ImageIO.write(image, "png", byteStream);
         String imageBase64 = Base64.getEncoder().encodeToString(byteStream.toByteArray());
-        return updateTemplateGraphic(templateId, imageBase64);
+        updateTemplateGraphic(templateId, imageBase64, imageType);
     }
 
-    public TemplateGraphic updateTemplateGraphic(String templateId, String imageBase64) throws SQLException
+    public void updateTemplateGraphic(String templateId, String imageBase64, TemplateImageType imageType) throws SQLException
     {
         if (!doesTemplateExist(templateId))
             throw new IllegalArgumentException("TemplateId does not exist.");
+        if (imageBase64 == null)
+            imageBase64 = "";
 
-        String sql = "UPDATE TemplateGraphic\n" +
-                     "SET ImageBase64 = ?   \n" +
-                     "  , LastUpdated = ?   \n" +
+        String imageColumn = getImageTypeColumn(imageType);
+        String sql = "UPDATE TemplateGraphic      \n" +
+                     "SET "+imageColumn+"   = ?   \n" +
+                     "   , LastUpdated      = ?   \n" +
                      "WHERE TemplateId = ?;";
 
         long lastUpdated = Instant.now().getEpochSecond();
@@ -142,12 +159,9 @@ public class RenderTemplateRepository
         updateStatement.setLong(2, lastUpdated);
         updateStatement.setString(3, templateId);
         updateStatement.executeUpdate();
-
-        TemplateGraphic templateGraphic = new TemplateGraphic(templateId, imageBase64, lastUpdated);
-        return templateGraphic;
     }
 
-    public ArrayList<TemplateSkinRenderDefinition> updateTemplateSkinDefinitions(String templateId, ArrayList<TemplateSkinRenderDefinition> skinDefinitions) throws SQLException
+    public void updateTemplateSkinDefinitions(String templateId, ArrayList<TemplateSkinRenderDefinition> skinDefinitions) throws SQLException
     {
         if (!doesTemplateExist(templateId))
             throw new IllegalArgumentException("TemplateId does not exist.");
@@ -171,6 +185,18 @@ public class RenderTemplateRepository
             updateStatement.setInt(6, skinDefinition.getHeight());
             updateStatement.executeUpdate();
         }
-        return skinDefinitions;
+    }
+
+    private String getImageTypeColumn(TemplateImageType type)
+    {
+        switch (type)
+        {
+            case BACKGROUND:
+                return "BackgroundImageBase64";
+            case FOREGROUND:
+                return "ForegroundImageBase64";
+            default:
+                return null;
+        }
     }
 }

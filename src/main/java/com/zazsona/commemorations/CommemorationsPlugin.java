@@ -8,6 +8,7 @@ import com.zazsona.commemorations.repository.CommemorationsPlayerRepository;
 import com.zazsona.commemorations.repository.RenderRepository;
 import com.zazsona.commemorations.repository.RenderTemplateRepository;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -80,7 +81,7 @@ public class CommemorationsPlugin extends JavaPlugin
             templateDataUpdater.extractTemplateResourcesFromJar(templatesDir, existingVersion, currentVersion);
             templateDataUpdater.loadTemplates(templatesDir, renderTemplateRepository, renderRepository);
         }
-        catch (SQLException | IOException | URISyntaxException e)
+        catch (SQLException | IOException | URISyntaxException | InvalidConfigurationException e)
         {
             getLogger().severe("Encountered an error when loading the plugin:");
             getLogger().severe(e.toString());
