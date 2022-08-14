@@ -7,10 +7,7 @@ import com.zazsona.commemorations.config.PluginConfig;
 import com.zazsona.commemorations.config.StatisticCommemorationConfig;
 import com.zazsona.commemorations.exception.UnableToBuildSchematicException;
 import com.zazsona.commemorations.repository.RenderRepository;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Statistic;
+import org.bukkit.*;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
@@ -20,12 +17,16 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerAdvancementDoneEvent;
 import org.bukkit.event.player.PlayerStatisticIncrementEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataHolder;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 
-public class CommemorationTriggerListener implements Listener
+public class CommemorationTriggerListener implements Listener, IIntervalledStatisticListener
 {
     private RenderRepository renderRepository;
     private IBlockSchematic schematic;
@@ -97,9 +98,12 @@ public class CommemorationTriggerListener implements Listener
         }
     }
 
-    // TODO: Get statistics not included in the above event ^
-    // Note: High-frequency events are not tracked. Find a workaround. (Timer?)
-    // Which stats specifically need to be tracked manually?
+
+    @Override
+    public void onIntervalledStatisticIncrement(PlayerStatisticIncrementEvent e)
+    {
+        onStatisticIncremented(e);
+    }
 
     // ===========================
     // Special Commemorations
@@ -136,6 +140,8 @@ public class CommemorationTriggerListener implements Listener
         try
         {
             renderRepository.createRender(templateId, (ArrayList<UUID>) featuredPlayers);
+            //TODO: Create the map
+            //Bukkit.createMap()
 
             // Check for ideal locations
             int schematicHalfWidth = (int) Math.ceil(schematic.getWidth() / 2);
@@ -162,6 +168,12 @@ public class CommemorationTriggerListener implements Listener
         }
         catch (UnableToBuildSchematicException e)
         {
+            //NamespacedKey mapKey = NamespacedKey.fromString("commemorations:mapid");
+
+            //ItemStack signStack = new ItemStack(Material.OAK_SIGN, 1);
+            //ItemMeta itemMeta = signStack.getItemMeta();
+            //PersistentDataContainer dataContainer = itemMeta.getPersistentDataContainer();
+            //dataContainer.set();
             // TODO: If sign cannot be built, give to player / drop to ground
         }
     }
