@@ -50,6 +50,9 @@ public class PluginConfig
 
     public PluginConfig(Plugin plugin)
     {
+        plugin.getConfig().options().parseComments(true);
+        plugin.saveDefaultConfig();
+
         FileConfiguration yamlConfig = plugin.getConfig();
 
         this.plugin = plugin;

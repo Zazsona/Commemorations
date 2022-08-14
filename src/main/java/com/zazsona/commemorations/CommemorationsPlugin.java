@@ -3,6 +3,7 @@ package com.zazsona.commemorations;
 import com.zazsona.commemorations.blockbuild.CommemorationSignBlockSchematic;
 import com.zazsona.commemorations.blockbuild.CommemorationSignBlockSchematicBuilder;
 import com.zazsona.commemorations.blockbuild.SchematicLocationSearcher;
+import com.zazsona.commemorations.config.PluginConfig;
 import com.zazsona.commemorations.database.DatabaseChangeManager;
 import com.zazsona.commemorations.image.GraphicRenderer;
 import com.zazsona.commemorations.image.PlayerProfileFetcher;
@@ -109,6 +110,8 @@ public class CommemorationsPlugin extends JavaPlugin
     public void onEnable()
     {
         super.onEnable();
+        PluginConfig.getInstance(); // Ensure an instance exists now so we don't suffer creation costs later.
+
         CommemorationsPlayerDataUpdater playerDataUpdater = new CommemorationsPlayerDataUpdater(profileFetcher, renderRepository);
         getServer().getPluginManager().registerEvents(playerDataUpdater, this);
 
