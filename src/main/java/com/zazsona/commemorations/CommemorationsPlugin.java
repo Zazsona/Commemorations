@@ -1,5 +1,8 @@
 package com.zazsona.commemorations;
 
+import com.zazsona.commemorations.blockbuild.CommemorationSignBlockSchematic;
+import com.zazsona.commemorations.blockbuild.CommemorationSignBlockSchematicBuilder;
+import com.zazsona.commemorations.blockbuild.SchematicLocationSearcher;
 import com.zazsona.commemorations.database.DatabaseChangeManager;
 import com.zazsona.commemorations.image.GraphicRenderer;
 import com.zazsona.commemorations.image.PlayerProfileFetcher;
@@ -109,8 +112,11 @@ public class CommemorationsPlugin extends JavaPlugin
         CommemorationsPlayerDataUpdater playerDataUpdater = new CommemorationsPlayerDataUpdater(profileFetcher, renderRepository);
         getServer().getPluginManager().registerEvents(playerDataUpdater, this);
 
-        AdvancementListener advancementListener = new AdvancementListener(renderRepository);
-        getServer().getPluginManager().registerEvents(advancementListener, this);
+        CommemorationSignBlockSchematic schematic = new CommemorationSignBlockSchematic();
+        CommemorationSignBlockSchematicBuilder builder = new CommemorationSignBlockSchematicBuilder();
+        SchematicLocationSearcher searcher = new SchematicLocationSearcher();
+        CommemorationTriggerListener commemorationTriggerListener = new CommemorationTriggerListener(renderRepository, schematic, builder, searcher);
+        getServer().getPluginManager().registerEvents(commemorationTriggerListener, this);
     }
 
     @Override
