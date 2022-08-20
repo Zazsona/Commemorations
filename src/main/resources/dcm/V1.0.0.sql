@@ -48,11 +48,18 @@ CREATE TABLE IF NOT EXISTS Player (
     , PRIMARY KEY(PlayerGuid)
 );
 
-CREATE TABLE IF NOT EXISTS BrgPlayerToRenderedGraphic (
+CREATE TABLE IF NOT EXISTS BrgPlayerRenderedGraphic (
       PlayerGuid         VARCHAR(36)    NOT NULL
     , RenderGuid         VARCHAR(36)    NOT NULL
     , OrderIndex         INTEGER        NOT NULL
     , FOREIGN KEY(PlayerGuid) REFERENCES Player(PlayerGuid)
+    , FOREIGN KEY(RenderGuid) REFERENCES RenderedGraphic(RenderGuid)
+);
+
+CREATE TABLE IF NOT EXISTS MapIdRenderedGraphicPair (
+      MapId              INTEGER        NOT NULL
+    , RenderGuid         VARCHAR(36)    NOT NULL
+    , PRIMARY KEY(MapId, RenderGuid)
     , FOREIGN KEY(RenderGuid) REFERENCES RenderedGraphic(RenderGuid)
 );
 

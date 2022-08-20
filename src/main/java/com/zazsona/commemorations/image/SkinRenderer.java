@@ -1,7 +1,5 @@
 package com.zazsona.commemorations.image;
 
-import org.apache.commons.lang.NotImplementedException;
-
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -32,7 +30,7 @@ public class SkinRenderer
             case HEAD:
                 return renderSkinHead(playerSkin, true);
             default:
-                throw new NotImplementedException("This render type has not yet been implemented.");
+                throw new IllegalArgumentException("This render type has not yet been implemented.");
         }
     }
 

@@ -65,7 +65,7 @@ public class RenderRepository
 
     public ArrayList<UUID> getRenderPlayerGuids(UUID renderGuid) throws SQLException
     {
-        String sql = "SELECT PlayerGuid FROM BrgPlayerToRenderedGraphic WHERE RenderGuid = ? ORDER BY OrderIndex;";
+        String sql = "SELECT PlayerGuid FROM BrgPlayerRenderedGraphic WHERE RenderGuid = ? ORDER BY OrderIndex;";
         PreparedStatement selectStatement = conn.prepareStatement(sql);
         selectStatement.setString(1, renderGuid.toString());
         selectStatement.execute();
@@ -85,7 +85,7 @@ public class RenderRepository
     {
         String sql = "SELECT Rnd.RenderGuid, Rnd.TemplateId, Rnd.ImageBase64, Rnd.LastUpdated         \n" +
                      "FROM RenderedGraphic Rnd                                                        \n" +
-                     "INNER JOIN BrgPlayerToRenderedGraphic AS Brg on Rnd.RenderGuid = Brg.RenderGuid \n" +
+                     "INNER JOIN BrgPlayerRenderedGraphic AS Brg on Rnd.RenderGuid = Brg.RenderGuid \n" +
                      "WHERE Brg.PlayerId = ?;";
         PreparedStatement selectStatement = conn.prepareStatement(sql);
         selectStatement.setString(1, playerGuid.toString());
@@ -215,7 +215,7 @@ public class RenderRepository
             renderUpdate.setString(4, renderGuid.toString());
             renderUpdate.executeUpdate();
 
-            String playerBrgDeleteSql = "DELETE FROM BrgPlayerToRenderedGraphic WHERE RenderGuid = ?;";
+            String playerBrgDeleteSql = "DELETE FROM BrgPlayerRenderedGraphic WHERE RenderGuid = ?;";
             PreparedStatement deleteStatement = conn.prepareStatement(playerBrgDeleteSql);
             deleteStatement.setString(1, renderGuid.toString());
             deleteStatement.executeUpdate();
@@ -240,7 +240,7 @@ public class RenderRepository
 
     private void insertRenderPlayerBridge(String templateId, ArrayList<UUID> featuredPlayers) throws SQLException
     {
-        String playerBrgInsertSql = "INSERT INTO BrgPlayerToRenderedGraphic (PlayerGuid, RenderGuid, OrderIndex)\n" +
+        String playerBrgInsertSql = "INSERT INTO BrgPlayerRenderedGraphic (PlayerGuid, RenderGuid, OrderIndex)\n" +
                 "VALUES (?,          ?,          ?         )";
         for (int i = 1; i < featuredPlayers.size(); i++)
             playerBrgInsertSql += ", (?, ?, ?)";

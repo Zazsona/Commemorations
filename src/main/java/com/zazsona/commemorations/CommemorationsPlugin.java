@@ -8,6 +8,7 @@ import com.zazsona.commemorations.database.DatabaseChangeManager;
 import com.zazsona.commemorations.image.GraphicRenderer;
 import com.zazsona.commemorations.image.PlayerProfileFetcher;
 import com.zazsona.commemorations.image.SkinRenderer;
+import com.zazsona.commemorations.repository.CommemorationMapRepository;
 import com.zazsona.commemorations.repository.CommemorationsPlayerRepository;
 import com.zazsona.commemorations.repository.RenderRepository;
 import com.zazsona.commemorations.repository.RenderTemplateRepository;
@@ -31,6 +32,7 @@ public class CommemorationsPlugin extends JavaPlugin
     private RenderTemplateRepository renderTemplateRepository;
     private RenderRepository renderRepository;
     private CommemorationsPlayerRepository playerRepository;
+    private CommemorationMapRepository mapRepository;
 
     private PlayerProfileFetcher profileFetcher;
     private SkinRenderer skinRenderer;
@@ -52,10 +54,13 @@ public class CommemorationsPlugin extends JavaPlugin
     {
         return renderRepository;
     }
-
     public CommemorationsPlayerRepository getPlayerRepository()
     {
         return playerRepository;
+    }
+    public CommemorationMapRepository getMapRepository()
+    {
+        return mapRepository;
     }
 
     @Override
@@ -78,6 +83,7 @@ public class CommemorationsPlugin extends JavaPlugin
             renderTemplateRepository = new RenderTemplateRepository(conn);
             renderRepository = new RenderRepository(conn, graphicRenderer, renderTemplateRepository);
             playerRepository = new CommemorationsPlayerRepository(conn, profileFetcher);
+            mapRepository = new CommemorationMapRepository(conn, renderRepository);
 
             Path templatesDirPath = Paths.get(getDataFolder().getAbsolutePath(), TEMPLATES_DIRECTORY);
             File templatesDir = templatesDirPath.toFile();
@@ -109,19 +115,29 @@ public class CommemorationsPlugin extends JavaPlugin
     @Override
     public void onEnable()
     {
-        super.onEnable();
-        PluginConfig.getInstance(); // Ensure an instance exists now so we don't suffer creation costs later.
+        try
+        {
+            super.onEnable();
+            PluginConfig.getInstance(); // Ensure an instance exists now so we don't suffer creation costs later.
+            mapRepository.loadCommemorationMaps();
 
-        CommemorationsPlayerDataUpdater playerDataUpdater = new CommemorationsPlayerDataUpdater(profileFetcher, renderRepository);
-        getServer().getPluginManager().registerEvents(playerDataUpdater, this);
+            CommemorationsPlayerDataUpdater playerDataUpdater = new CommemorationsPlayerDataUpdater(profileFetcher, renderRepository);
+            getServer().getPluginManager().registerEvents(playerDataUpdater, this);
 
-        CommemorationSignBlockSchematic schematic = new CommemorationSignBlockSchematic();
-        CommemorationSignBlockSchematicBuilder builder = new CommemorationSignBlockSchematicBuilder();
-        SchematicLocationSearcher searcher = new SchematicLocationSearcher();
-        IntervalledStatisticEventHandler intervalledStatisticEventHandler = new IntervalledStatisticEventHandler(this, 400);
-        CommemorationTriggerListener commemorationTriggerListener = new CommemorationTriggerListener(renderRepository, schematic, builder, searcher);
-        getServer().getPluginManager().registerEvents(commemorationTriggerListener, this);
-        intervalledStatisticEventHandler.addListener(commemorationTriggerListener);
+            CommemorationSignBlockSchematic schematic = new CommemorationSignBlockSchematic();
+            CommemorationSignBlockSchematicBuilder builder = new CommemorationSignBlockSchematicBuilder();
+            SchematicLocationSearcher searcher = new SchematicLocationSearcher();
+            IntervalledStatisticEventHandler intervalledStatisticEventHandler = new IntervalledStatisticEventHandler(this, 400);
+            CommemorationTriggerListener commemorationTriggerListener = new CommemorationTriggerListener(renderRepository, schematic, builder, searcher);
+            getServer().getPluginManager().registerEvents(commemorationTriggerListener, this);
+            intervalledStatisticEventHandler.addListener(commemorationTriggerListener);
+        }
+        catch (SQLException e)
+        {
+            getLogger().severe("Encountered an error when enabling the plugin:");
+            getLogger().severe(e.toString());
+            e.printStackTrace();
+        }
     }
 
     @Override
