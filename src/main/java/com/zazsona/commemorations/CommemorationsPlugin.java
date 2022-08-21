@@ -128,7 +128,7 @@ public class CommemorationsPlugin extends JavaPlugin
             CommemorationSignBlockSchematicBuilder builder = new CommemorationSignBlockSchematicBuilder();
             SchematicLocationSearcher searcher = new SchematicLocationSearcher();
             IntervalledStatisticEventHandler intervalledStatisticEventHandler = new IntervalledStatisticEventHandler(this, 400);
-            CommemorationTriggerListener commemorationTriggerListener = new CommemorationTriggerListener(renderRepository, schematic, builder, searcher);
+            CommemorationTriggerListener commemorationTriggerListener = new CommemorationTriggerListener(renderRepository, mapRepository, schematic, builder, searcher);
             getServer().getPluginManager().registerEvents(commemorationTriggerListener, this);
             intervalledStatisticEventHandler.addListener(commemorationTriggerListener);
         }
