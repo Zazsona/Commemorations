@@ -48,7 +48,9 @@ public class CommemorationSignBlockSchematicBuilder extends BlockSchematicBuilde
             Entity[] entities = chunk.getEntities();
             for (Entity entity : entities)
             {
-                if (frameLocs.contains(entity.getLocation()))
+                Location entityLoc = entity.getLocation();
+                Location entityBlockLoc = new Location(world, entityLoc.getBlockX(), entityLoc.getBlockY(), entityLoc.getBlockZ());
+                if (frameLocs.contains(entityBlockLoc))
                 {
                     ItemFrame itemFrame = (ItemFrame) entity;
                     MapView mapView = signSchematic.getMap();
