@@ -58,6 +58,9 @@ public class PluginConfig
         this.plugin = plugin;
         this.isPluginEnabled = yamlConfig.getBoolean(CFG_PLUGIN_ENABLED_KEY);
         this.isBuildingEnabled = yamlConfig.getBoolean(CFG_BUILDING_ENABLED_KEY);
+        this.advancementCommemorations = new HashMap<>();
+        this.statisticCommemorations = new HashMap<>();
+        this.specialCommemorations = new HashMap<>();
 
 
         List<Map<?, ?>> advancementYamlConfigs = yamlConfig.getMapList(CFG_ADVANCEMENTS_KEY);
@@ -124,6 +127,11 @@ public class PluginConfig
         isBuildingEnabled = buildingEnabled;
         plugin.getConfig().set(CFG_BUILDING_ENABLED_KEY, buildingEnabled);
         plugin.saveConfig();
+    }
+
+    public boolean isCommemoration(NamespacedKey key) throws IllegalArgumentException
+    {
+        return advancementCommemorations.containsKey(key) || statisticCommemorations.containsKey(key) || specialCommemorations.containsKey(key);
     }
 
     public CommemorationConfig getCommemoration(NamespacedKey key) throws IllegalArgumentException

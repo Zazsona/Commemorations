@@ -52,6 +52,8 @@ public class IntervalledStatisticEventHandler implements Listener
         playerStatValueMap = new HashMap<>();
         listeners = new ArrayList<>();
         this.intervalTicks = intervalTicks;
+        this.statMapLock = new Object();
+        this.listenersLock = new Object();
 
         Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> checkStatChanges(), intervalTicks, intervalTicks);
     }

@@ -2,11 +2,11 @@
 
 # Featured Players variables:
 # Advancements / Statistics:
-# - [Advancer] - The Player who unlocked the advancement/statistic
+# - /Advancer/ - The Player who unlocked the advancement/statistic
 # Special:
 #   commemorations:kill_a_player
-#   - [Killer] - The Player who did the killing
-#   - [Victim] - The Player who was killed
+#   - /Killer/ - The Player who did the killing
+#   - /Victim/ - The Player who was killed
 
 version: 1.0.0
 plugin-enabled: true
@@ -15,16 +15,16 @@ advancements:
   - advancement: minecraft:adventure/kill_a_mob
     template: wanted
     featurePlayers:
-      - [Advancer]
+      - /Advancer/
 statistics:
   - statistic: minecraft:play_time
     value: 1
     template: wanted
     featurePlayers:
-      - [Advancer]
+      - /Advancer/
 specials:
   - type: commemorations:kill_a_player
     template: wanted
     featurePlayers:
-      - [Killer]
-      - [Victim]
+      - /Killer/
+      - /Victim/

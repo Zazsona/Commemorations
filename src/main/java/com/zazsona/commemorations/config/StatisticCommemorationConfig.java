@@ -6,10 +6,11 @@ import org.bukkit.Statistic;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class StatisticCommemorationConfig extends CommemorationConfig
 {
-    private static final String ADVANCER_PLAYER_REGISTRATION = "[Advancer]";
+    private static final String ADVANCER_PLAYER_REGISTRATION = "/Advancer/";
 
     private int statisticValue;
 
@@ -39,13 +40,14 @@ public class StatisticCommemorationConfig extends CommemorationConfig
     public List<UUID> resolveFeaturedPlayers(UUID advancer)
     {
         ArrayList<UUID> orderedIds = new ArrayList<>();
-        for (String featurePlayerRegistration : getFeaturePlayerRegistrations())
-        {
-            if (featurePlayerRegistration.equals(ADVANCER_PLAYER_REGISTRATION))
-                orderedIds.add(advancer);
-            else
-                orderedIds.add(UUID.fromString(featurePlayerRegistration));
-        }
+        List<String> playerRegistrations = getFeaturePlayerRegistrations();
+        playerRegistrations.forEach(reg ->
+                                    {
+                                        if (reg.equals(ADVANCER_PLAYER_REGISTRATION))
+                                            orderedIds.add(advancer);
+                                        else
+                                            orderedIds.add(UUID.fromString(reg));
+                                    });
         return orderedIds;
     }
 }
